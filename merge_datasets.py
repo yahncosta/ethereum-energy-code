@@ -46,11 +46,11 @@ print("Joining on IP...")
 df_merged = df_cl.merge(df_el_expanded, on="ip", how="inner")
 print(f"  Rows after inner join: {len(df_merged)}")
 
-print("Uploading train_data...")
+print("Uploading final_visits_merged...")
 DatasetDict({"train": Dataset.from_pandas(df_merged, preserve_index=False)}).push_to_hub(
     REPO_ID,
-    config_name="train_data",
-    commit_message="Add train_data: inner join of consensus and execution visits on IP, all Maddrs IPs considered",
+    config_name="final_visits_merged",
+    commit_message="Add final_visits_merged: inner join of consensus and execution visits on IP, all Maddrs IPs considered",
 )
 
 print("Done.")
