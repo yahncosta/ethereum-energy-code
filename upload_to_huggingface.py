@@ -58,7 +58,7 @@ def build_crawl_session_df() -> pd.DataFrame:
     ])
 
 
-def parse_properties_to_df(path: Path) -> pd.DataFrame:
+def parse_properties_to_df(path: Path, source: str) -> pd.DataFrame:
     with open(path) as f:
         props = json.load(f)
 
@@ -70,12 +70,14 @@ def parse_properties_to_df(path: Path) -> pd.DataFrame:
                     "category": category,
                     "key":      key,
                     "count":    int(value),
+                    "source":   source,
                 })
         else:
             rows.append({
                 "category": category,
                 "key":      "__value__",
                 "count":    int(entries),
+                "source":   source,
             })
 
     return pd.DataFrame(rows)
@@ -99,39 +101,34 @@ def main():
     create_repo(repo_id=REPO_ID, repo_type="dataset", private=False, exist_ok=True)
     print("Repository ready.\n")
 
-    print("[1/5] consensus_visits")
+    print("[1/4] consensus_visits")
     upload(
         read_visits(CONSENSUS_VISITS_FILE),
         config_name="consensus_visits",
         commit_message="Add consensus layer visit records (118,537 peers)",
     )
 
-    print("\n[2/5] execution_visits")
+    print("\n[2/4] execution_visits")
     upload(
         read_visits(EXECUTION_VISITS_FILE),
         config_name="execution_visits",
         commit_message="Add execution layer visit records (77,453 peers)",
     )
 
-    print("\n[3/5] crawl_session")
+    print("\n[3/4] crawl_session")
     upload(
         build_crawl_session_df(),
         config_name="crawl_session",
         commit_message="Add crawl session metadata (one row per layer)",
     )
 
-    print("\n[4/5] consensus_crawl_properties")
+    print("\n[4/4] crawl_properties")
+    cl_props = parse_properties_to_df(CONSENSUS_PROPERTIES_FILE, source="consensus")
+    el_props = parse_properties_to_df(EXECUTION_PROPERTIES_FILE, source="execution")
     upload(
-        parse_properties_to_df(CONSENSUS_PROPERTIES_FILE),
-        config_name="consensus_crawl_properties",
-        commit_message="Add consensus crawl properties in tidy format (category, key, count)",
-    )
-
-    print("\n[5/5] execution_crawl_properties")
-    upload(
-        parse_properties_to_df(EXECUTION_PROPERTIES_FILE),
-        config_name="execution_crawl_properties",
-        commit_message="Add execution crawl properties in tidy format (category, key, count)",
+        pd.concat([cl_props, el_props], ignore_index=True),
+        config_name="crawl_properties",
+        commit_message="Add consensus + execution crawl properties with source column (category, key, count, source)",
     )
 
     print("\n" + "=" * 60)
