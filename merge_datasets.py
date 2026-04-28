@@ -46,6 +46,11 @@ print("Joining on IP...")
 df_merged = df_cl.merge(df_el_expanded, on="ip", how="inner")
 print(f"  Rows after inner join: {len(df_merged)}")
 
+print("De-duplicating based on PeerID...")
+df_merged = df_merged.drop_duplicates(subset=["PeerID_el"])
+df_merged = df_merged.drop_duplicates(subset=["PeerID_cl"])
+print(f"  Rows after dropping duplicates: {len(df_merged)}")
+
 print("Uploading final_visits_merged...")
 DatasetDict({"train": Dataset.from_pandas(df_merged, preserve_index=False)}).push_to_hub(
     REPO_ID,
