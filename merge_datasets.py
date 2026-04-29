@@ -28,37 +28,34 @@ def extract_ips_from_maddrs(maddrs_json):
 
 print("Filtering out EL peers with multiple distinct IPs in Maddrs...")
 el_ips = df_el["Maddrs"].apply(extract_ips_from_maddrs)
-df_el_filtered = df_el[el_ips.apply(len) <= 1].copy()
+df_el_filtered = df_el[el_ips.apply(len) == 1].copy()
+df_el_filtered["ip"] = el_ips[df_el_filtered.index].apply(lambda ips: ips[0])
 print(f"  EL rows before filter: {len(df_el)}")
 print(f"  EL rows after filter: {len(df_el_filtered)}")
 
-print("Extracting single IP from EL Maddrs...")
-df_el_filtered["ip"] = el_ips[df_el_filtered.index].apply(lambda ips: ips[0] if ips else None)
-df_el_filtered = df_el_filtered[df_el_filtered["ip"].notna()]
-print(f"  EL rows with valid IP: {len(df_el_filtered)}")
+print("Keeping only IPs that appear exactly once in each layer...")
+cl_ip_counts = df_cl["ip"].value_counts()
+el_ip_counts = df_el_filtered["ip"].value_counts()
+
+clean_ips = set(cl_ip_counts[cl_ip_counts == 1].index) & set(el_ip_counts[el_ip_counts == 1].index)
+print(f"  IPs with exactly one CL and one EL peer: {len(clean_ips)}")
+
+df_cl_clean = df_cl[df_cl["ip"].isin(clean_ips)]
+df_el_clean = df_el_filtered[df_el_filtered["ip"].isin(clean_ips)]
 
 print("Renaming columns to avoid collisions...")
-df_cl_renamed = df_cl.rename(columns=lambda c: c + "_cl" if c != "ip" else c)
-df_el_renamed = df_el_filtered.rename(columns=lambda c: c + "_el" if c != "ip" else c)
+df_cl_clean = df_cl_clean.rename(columns=lambda c: c + "_cl" if c != "ip" else c)
+df_el_clean = df_el_clean.rename(columns=lambda c: c + "_el" if c != "ip" else c)
 
-print("Joining EL ip on CL ip...")
-df_merged = df_cl_renamed.merge(df_el_renamed, on="ip", how="inner")
+print("Joining on IP...")
+df_merged = df_cl_clean.merge(df_el_clean, on="ip", how="inner")
 print(f"  Rows after inner join: {len(df_merged)}")
-
-print("Identifying EL peers that matched more than one CL peer...")
-el_match_counts = df_merged.groupby("PeerID_el")["PeerID_cl"].nunique()
-ambiguous_el = set(el_match_counts[el_match_counts > 1].index)
-print(f"  EL peers matched to more than one CL peer: {len(ambiguous_el)}")
-print(f"  Rows that will be removed: {df_merged['PeerID_el'].isin(ambiguous_el).sum()}")
-
-df_merged = df_merged[~df_merged["PeerID_el"].isin(ambiguous_el)]
-print(f"  Rows after removing ambiguous EL peers: {len(df_merged)}")
 
 print("Uploading final_visits_merged...")
 DatasetDict({"train": Dataset.from_pandas(df_merged, preserve_index=False)}).push_to_hub(
     REPO_ID,
     config_name="final_visits_merged",
-    commit_message="Add final_visits_merged: EL peers matching multiple CL peers excluded entirely",
+    commit_message="Add final_visits_merged: only unambiguous 1-to-1 IP matches between layers",
 )
 
 print("Done.")
