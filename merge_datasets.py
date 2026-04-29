@@ -12,8 +12,6 @@ print("Loading final_visits_execution...")
 df_el = load_dataset(REPO_ID, name="final_visits_execution", split="train").to_pandas()
 print(f"  Rows: {len(df_el)}")
 
-print("Extracting all IPs from Maddrs for execution layer...")
-
 def extract_ips_from_maddrs(maddrs_json):
     try:
         maddrs = json.loads(maddrs_json) if isinstance(maddrs_json, str) else maddrs_json
@@ -28,29 +26,39 @@ def extract_ips_from_maddrs(maddrs_json):
     except Exception:
         return []
 
-el_records = []
-for _, row in df_el.iterrows():
-    ips = extract_ips_from_maddrs(row["Maddrs"])
-    for ip in ips:
-        el_records.append({**row.to_dict(), "ip": ip})
+print("Filtering out EL peers with multiple distinct IPs in Maddrs...")
+el_ips = df_el["Maddrs"].apply(extract_ips_from_maddrs)
+df_el_filtered = df_el[el_ips.apply(len) <= 1].copy()
+print(f"  EL rows before filter: {len(df_el)}")
+print(f"  EL rows after filter: {len(df_el_filtered)}")
 
-df_el_expanded = pd.DataFrame(el_records)
-df_el_expanded = df_el_expanded[df_el_expanded["ip"].notna()]
-print(f"  EL rows after IP expansion: {len(df_el_expanded)}")
+print("Extracting single IP from EL Maddrs...")
+df_el_filtered["ip"] = el_ips[df_el_filtered.index].apply(lambda ips: ips[0] if ips else None)
+df_el_filtered = df_el_filtered[df_el_filtered["ip"].notna()]
+print(f"  EL rows with valid IP: {len(df_el_filtered)}")
 
 print("Renaming columns to avoid collisions...")
-df_cl = df_cl.rename(columns=lambda c: c + "_cl" if c != "ip" else c)
-df_el_expanded = df_el_expanded.rename(columns=lambda c: c + "_el" if c != "ip" else c)
+df_cl_renamed = df_cl.rename(columns=lambda c: c + "_cl" if c != "ip" else c)
+df_el_renamed = df_el_filtered.rename(columns=lambda c: c + "_el" if c != "ip" else c)
 
-print("Joining on IP...")
-df_merged = df_cl.merge(df_el_expanded, on="ip", how="inner")
+print("Joining EL ip on CL ip...")
+df_merged = df_cl_renamed.merge(df_el_renamed, on="ip", how="inner")
 print(f"  Rows after inner join: {len(df_merged)}")
+
+print("Identifying EL peers that matched more than one CL peer...")
+el_match_counts = df_merged.groupby("PeerID_el")["PeerID_cl"].nunique()
+ambiguous_el = set(el_match_counts[el_match_counts > 1].index)
+print(f"  EL peers matched to more than one CL peer: {len(ambiguous_el)}")
+print(f"  Rows that will be removed: {df_merged['PeerID_el'].isin(ambiguous_el).sum()}")
+
+df_merged = df_merged[~df_merged["PeerID_el"].isin(ambiguous_el)]
+print(f"  Rows after removing ambiguous EL peers: {len(df_merged)}")
 
 print("Uploading final_visits_merged...")
 DatasetDict({"train": Dataset.from_pandas(df_merged, preserve_index=False)}).push_to_hub(
     REPO_ID,
     config_name="final_visits_merged",
-    commit_message="Add final_visits_merged: inner join of consensus and execution visits on IP, all Maddrs IPs considered",
+    commit_message="Add final_visits_merged: EL peers matching multiple CL peers excluded entirely",
 )
 
 print("Done.")
