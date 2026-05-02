@@ -16,6 +16,7 @@ COLUMNS_TO_KEEP = {
 }
 
 _ARM_TOKENS = {"aarch64", "aarch_64", "arm64"}
+_X86_TOKENS = {"x86_64", "amd64", "linux-x64", "windows-x64", "linux-386", "x86_64-unknown-linux-gnu"}
 
 _CL_PATTERNS = [
     ("lighthouse", re.compile(r"lighthouse", re.IGNORECASE)),
@@ -36,12 +37,19 @@ _EL_PATTERNS = [
 ]
 
 
-def _arch(agent: str) -> str:
+def _detect_arch(agent: str) -> str | None:
+    if not agent or (isinstance(agent, float) and np.isnan(agent)):
+        return None
     low = agent.lower()
-    for tok in _ARM_TOKENS:
-        if tok in low:
-            return "ARM"
-    return "x86"
+    is_arm = any(tok in low for tok in _ARM_TOKENS)
+    is_x86 = any(tok in low for tok in _X86_TOKENS)
+    if is_arm and is_x86:
+        return None
+    if is_arm:
+        return "ARM"
+    if is_x86:
+        return "x86"
+    return None
 
 
 def _match_client(agent: str, patterns) -> str | None:
@@ -54,7 +62,16 @@ def _match_client(agent: str, patterns) -> str | None:
 def _parse_agent(agent, patterns) -> tuple:
     if not agent or (isinstance(agent, float) and np.isnan(agent)):
         return None, None
-    return _match_client(agent, patterns), _arch(agent)
+    return _match_client(agent, patterns), _detect_arch(agent)
+
+
+def _resolve_hw_arch(cl_arch, el_arch) -> str | None:
+    archs = {a for a in (cl_arch, el_arch) if a is not None}
+    if len(archs) > 1:
+        return None
+    if len(archs) == 1:
+        return archs.pop()
+    return None
 
 
 print("Loading final_visits_merged...")
@@ -76,16 +93,16 @@ print(f"\nSelected columns: {list(df.columns)}")
 cl_parsed = df["AgentVersion_cl"].apply(lambda v: _parse_agent(v, _CL_PATTERNS))
 el_parsed = df["AgentVersion_el"].apply(lambda v: _parse_agent(v, _EL_PATTERNS))
 
-df["consensus_client"], df["cl_arch"] = zip(*cl_parsed)
-df["execution_client"], df["el_arch"] = zip(*el_parsed)
+df["consensus_client"], cl_arch = zip(*cl_parsed)
+df["execution_client"], el_arch = zip(*el_parsed)
 
-df["hw_arch"] = (
-    (df["cl_arch"] == "ARM") | (df["el_arch"] == "ARM")
-).map({True: "ARM", False: "x86"})
+df["hw_arch"] = [_resolve_hw_arch(c, e) for c, e in zip(cl_arch, el_arch)]
 
 print(f"  consensus_client nulls : {df['consensus_client'].isna().sum()}")
 print(f"  execution_client nulls : {df['execution_client'].isna().sum()}")
-print(f"  ARM nodes              : {(df['hw_arch'] == 'ARM').sum()}")
+print(f"  hw_arch ARM            : {(df['hw_arch'] == 'ARM').sum()}")
+print(f"  hw_arch x86            : {(df['hw_arch'] == 'x86').sum()}")
+print(f"  hw_arch null           : {df['hw_arch'].isna().sum()}")
 
 print("\nPushing to pre_train_data...")
 DatasetDict({"train": Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
