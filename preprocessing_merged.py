@@ -98,11 +98,21 @@ df["execution_client"], el_arch = zip(*el_parsed)
 
 df["hw_arch"] = [_resolve_hw_arch(c, e) for c, e in zip(cl_arch, el_arch)]
 
-print(f"  consensus_client nulls : {df['consensus_client'].isna().sum()}")
-print(f"  execution_client nulls : {df['execution_client'].isna().sum()}")
-print(f"  hw_arch ARM            : {(df['hw_arch'] == 'ARM').sum()}")
-print(f"  hw_arch x86            : {(df['hw_arch'] == 'x86').sum()}")
-print(f"  hw_arch null           : {df['hw_arch'].isna().sum()}")
+before = len(df)
+
+null_arch = df["hw_arch"].isna()
+null_cl   = df["consensus_client"].isna()
+null_el   = df["execution_client"].isna()
+
+df = df[~null_arch & ~null_cl & ~null_el].reset_index(drop=True)
+
+print(f"  dropped (null hw_arch)          : {null_arch.sum()}")
+print(f"  dropped (null consensus_client) : {null_cl.sum()}")
+print(f"  dropped (null execution_client) : {null_el.sum()}")
+print(f"  dropped total (unique rows)     : {before - len(df)}")
+print(f"  remaining rows                  : {len(df)}")
+print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
+print(f"  hw_arch x86                     : {(df['hw_arch'] == 'x86').sum()}")
 
 print("\nPushing to pre_train_data...")
 DatasetDict({"train": Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
