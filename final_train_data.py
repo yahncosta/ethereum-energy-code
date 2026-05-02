@@ -9,6 +9,8 @@ COLUMNS_TO_KEEP = {
     "attnets_num_cl": "attnets_num",
     "syncnets_cl": "syncnets",
     "AgentVersion_el": "AgentVersion_el",
+    "Protocols_cl": "Protocols_cl",
+    "Protocols_el": "Protocols_el"
 }
 
 print("Loading final_visits_merged...")
