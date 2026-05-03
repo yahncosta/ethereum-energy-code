@@ -30,123 +30,83 @@ _CLOUD_PROVIDERS: frozenset[str] = frozenset(
 )
 
 
-def _build_octet_index(
-    networks: list[ipaddress.IPv4Network],
-) -> dict[int, list[ipaddress.IPv4Network]]:
-    idx: dict[int, list[ipaddress.IPv4Network]] = collections.defaultdict(list)
-    for net in networks:
-        idx[int(net.network_address) >> 24].append(net)
-    return dict(idx)
+def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
 
-
-def _ip_in_index(
-    addr: ipaddress.IPv4Address,
-    idx: dict[int, list[ipaddress.IPv4Network]],
-) -> bool:
-    return any(addr in net for net in idx.get(int(addr) >> 24, []))
-
-
-def _fetch_official(provider: str) -> dict[int, list[ipaddress.IPv4Network]]:
-    url = _OFFICIAL_PROVIDER_URLS[provider]
-    r = requests.get(url, timeout=20)
-    r.raise_for_status()
-    data = r.json()
-
-    if provider == "aws":
-        nets = [ipaddress.ip_network(p["ip_prefix"]) for p in data["prefixes"]]
-
-    elif provider == "gcp":
-        nets = [
-            ipaddress.ip_network(p["ipv4Prefix"])
-            for p in data["prefixes"]
-            if "ipv4Prefix" in p
-        ]
-
-    elif provider == "azure":
-        nets = [
-            ipaddress.ip_network(cidr, strict=False)
-            for v in data["values"]
-            for cidr in v["properties"].get("addressPrefixes", [])
-            if ":" not in cidr
-        ]
-
-    elif provider == "oracle":
-        nets = [
-            ipaddress.ip_network(c["cidr"], strict=False)
-            for region in data.get("regions", [])
-            for c in region.get("cidrs", [])
-            if ":" not in c["cidr"]
-        ]
-
-    else:
-        nets = []
-
-    return _build_octet_index(nets)
-
-
-def _fetch_asn(provider: str) -> dict[int, list[ipaddress.IPv4Network]]:
-    nets: list[ipaddress.IPv4Network] = []
-    for asn in _RIPE_ASN_MAP[provider]:
-        try:
-            r = requests.get(
-                f"https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS{asn}",
-                timeout=20,
-            )
-            r.raise_for_status()
-            for p in r.json()["data"]["prefixes"]:
-                if ":" not in p["prefix"]:
-                    nets.append(ipaddress.ip_network(p["prefix"], strict=False))
-            time.sleep(0.15)
-        except Exception as exc:
-            print(f"    [cloud_inference] warning: AS{asn} ({provider}) failed: {exc}")
-    return _build_octet_index(nets)
-
-
-def _build_provider_indices() -> list[tuple[str, dict[int, list[ipaddress.IPv4Network]]]]:
-    indices: list[tuple[str, dict]] = []
+    indices: list[tuple[str, dict[int, list[ipaddress.IPv4Network]]]] = []
 
     print("  [cloud_inference] fetching official IP ranges (AWS, GCP, Azure, Oracle)...")
-    for provider in ("aws", "gcp", "azure", "oracle"):
+    for provider, url in _OFFICIAL_PROVIDER_URLS.items():
         try:
-            idx = _fetch_official(provider)
-            indices.append((provider, idx))
+            data = requests.get(url, timeout=20).raise_for_status() or requests.get(url, timeout=20).json()
+            r = requests.get(url, timeout=20)
+            r.raise_for_status()
+            data = r.json()
+
+            if provider == "aws":
+                nets = [ipaddress.ip_network(p["ip_prefix"]) for p in data["prefixes"]]
+            elif provider == "gcp":
+                nets = [ipaddress.ip_network(p["ipv4Prefix"]) for p in data["prefixes"] if "ipv4Prefix" in p]
+            elif provider == "azure":
+                nets = [
+                    ipaddress.ip_network(cidr, strict=False)
+                    for v in data["values"]
+                    for cidr in v["properties"].get("addressPrefixes", [])
+                    if ":" not in cidr
+                ]
+            elif provider == "oracle":
+                nets = [
+                    ipaddress.ip_network(c["cidr"], strict=False)
+                    for region in data.get("regions", [])
+                    for c in region.get("cidrs", [])
+                    if ":" not in c["cidr"]
+                ]
+
+            idx: dict[int, list[ipaddress.IPv4Network]] = collections.defaultdict(list)
+            for net in nets:
+                idx[int(net.network_address) >> 24].append(net)
+            indices.append((provider, dict(idx)))
             print(f"    {provider}: ok")
         except Exception as exc:
             print(f"    {provider}: FAILED — {exc}")
 
     print("  [cloud_inference] fetching ASN prefix lists from RIPE stat...")
-    for provider in _RIPE_ASN_MAP:
-        idx = _fetch_asn(provider)
-        indices.append((provider, idx))
+    for provider, asns in _RIPE_ASN_MAP.items():
+        nets = []
+        for asn in asns:
+            try:
+                r = requests.get(
+                    f"https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS{asn}",
+                    timeout=20,
+                )
+                r.raise_for_status()
+                for p in r.json()["data"]["prefixes"]:
+                    if ":" not in p["prefix"]:
+                        nets.append(ipaddress.ip_network(p["prefix"], strict=False))
+                time.sleep(0.15)
+            except Exception as exc:
+                print(f"    [cloud_inference] warning: AS{asn} ({provider}) failed: {exc}")
+        idx = collections.defaultdict(list)
+        for net in nets:
+            idx[int(net.network_address) >> 24].append(net)
+        indices.append((provider, dict(idx)))
         print(f"    {provider}: ok")
-
-    return indices
-
-
-def _classify_ip(
-    ip_str: str,
-    indices: list[tuple[str, dict[int, list[ipaddress.IPv4Network]]]],
-) -> str:
-    try:
-        addr = ipaddress.ip_address(ip_str)
-    except ValueError:
-        return "other"
-    for provider, idx in indices:
-        if _ip_in_index(addr, idx):
-            return provider
-    return "other"
-
-
-def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
-
-    indices = _build_provider_indices()
 
     print(f"  [cloud_inference] classifying {len(df)} IPs...")
     t0 = time.time()
-    df["cloud_provider"] = df["ip"].apply(lambda ip: _classify_ip(ip, indices))
-    print(f"  [cloud_inference] done in {time.time() - t0:.2f}s")
 
+    def classify(ip_str: str) -> str:
+        try:
+            addr = ipaddress.ip_address(ip_str)
+        except ValueError:
+            return "other"
+        for provider, idx in indices:
+            if any(addr in net for net in idx.get(int(addr) >> 24, [])):
+                return provider
+        return "other"
+
+    df["cloud_provider"] = df["ip"].apply(classify)
     df["is_cloud_hosted"] = df["cloud_provider"].isin(_CLOUD_PROVIDERS)
+    print(f"  [cloud_inference] done in {time.time() - t0:.2f}s")
 
     return df
