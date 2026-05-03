@@ -1,6 +1,7 @@
 import pandas as pd
 from datasets import load_dataset, Dataset, DatasetDict
 
+from cloud_inference import infer_cloud_features
 from ccri_inference import infer_ccri_features
 
 REPO_ID       = "yhackspacher/ethereum-crawl"
@@ -19,12 +20,23 @@ print(f"Loaded: {len(df)} rows x {len(df.columns)} columns")
 print(f"Columns: {df.columns.tolist()}\n")
 
 print("=" * 60)
-print("STEP 2 — CCRI hardware & power inference")
+print("STEP 2 — Cloud hosting inference")
+print("=" * 60)
+
+df = infer_cloud_features(df)
+
+cloud_count = int(df["is_cloud_hosted"].sum())
+total = len(df)
+print(f"Cloud-hosted: {cloud_count}/{total} ({100 * cloud_count / total:.1f}%)")
+print(df["cloud_provider"].value_counts().to_string())
+print()
+
+print("=" * 60)
+print("STEP 3 — CCRI hardware & power inference")
 print("=" * 60)
 
 df = infer_ccri_features(df)
 
-total    = len(df)
 measured = int(df["ccri_measured"].sum())
 print(f"CCRI coverage: {measured}/{total} rows ({100 * measured / total:.1f}%)")
 
@@ -55,7 +67,7 @@ print("=" * 60)
 DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
     REPO_ID,
     config_name=TARGET_CONFIG,
-    commit_message=f"Update {TARGET_CONFIG} with inferred features",
+    commit_message=f"Update {TARGET_CONFIG} with cloud and CCRI inferred features",
 )
 
 print(f"Done. Dataset pushed to: https://huggingface.co/datasets/{REPO_ID}")
