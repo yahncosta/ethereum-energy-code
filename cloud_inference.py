@@ -3,7 +3,13 @@ import ipaddress
 import collections
 import requests
 import pandas as pd
+from datasets import load_dataset, Dataset, DatasetDict
 
+
+REPO_ID       = "yhackspacher/ethereum-crawl"
+SOURCE_CONFIG = "pre_train_data"
+TARGET_CONFIG = "train_data"
+SOURCE_SPLIT  = "train"
 
 _OFFICIAL_PROVIDER_URLS: dict[str, str] = {
     "aws":    "https://ip-ranges.amazonaws.com/ip-ranges.json",
@@ -38,7 +44,6 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     print("  [cloud_inference] fetching official IP ranges (AWS, GCP, Azure, Oracle)...")
     for provider, url in _OFFICIAL_PROVIDER_URLS.items():
         try:
-            data = requests.get(url, timeout=20).raise_for_status() or requests.get(url, timeout=20).json()
             r = requests.get(url, timeout=20)
             r.raise_for_status()
             data = r.json()
@@ -110,3 +115,30 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     print(f"  [cloud_inference] done in {time.time() - t0:.2f}s")
 
     return df
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print(f"Loading '{SOURCE_CONFIG}' from {REPO_ID}")
+    print("=" * 60)
+
+    df = load_dataset(REPO_ID, name=SOURCE_CONFIG, split=SOURCE_SPLIT).to_pandas()
+    print(f"Loaded: {len(df)} rows x {len(df.columns)} columns\n")
+
+    df = infer_cloud_features(df)
+
+    total = len(df)
+    cloud_count = int(df["is_cloud_hosted"].sum())
+    print(f"\nCloud-hosted: {cloud_count}/{total} ({100 * cloud_count / total:.1f}%)")
+    print(df["cloud_provider"].value_counts().to_string())
+
+    print(f"\n{'=' * 60}")
+    print(f"Pushing to '{TARGET_CONFIG}'...")
+    print("=" * 60)
+
+    DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
+        REPO_ID,
+        config_name=TARGET_CONFIG,
+        commit_message="cloud_inference: add is_cloud_hosted and cloud_provider",
+    )
+    print(f"Done. https://huggingface.co/datasets/{REPO_ID}")

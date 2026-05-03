@@ -1,5 +1,12 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+from datasets import load_dataset, Dataset, DatasetDict
+
+
+REPO_ID       = "yhackspacher/ethereum-crawl"
+SOURCE_CONFIG = "train_data"
+TARGET_CONFIG = "train_data"
+SOURCE_SPLIT  = "train"
 
 CCRI_CL_MARGINAL_W: dict[str, float | None] = {
     "lighthouse":  6.0,
@@ -93,31 +100,6 @@ CCRI_HW_TIERS: dict[int, dict] = {
 TIER_WEIGHTS: dict[int, float] = {4: 0.25, 5: 0.50, 6: 0.25}
 
 
-def assign_hw_tier(row: pd.Series) -> int | None:
-    if row.get("is_cloud_hosted", False):
-        return None
-    if row["hw_arch"] == "ARM":
-        return 1
-    return 4
-
-
-def _weighted_idle(key: str) -> float:
-    return sum(w * CCRI_HW_TIERS[t][key] for t, w in TIER_WEIGHTS.items())
-
-
-def resolve_idle_power(tier: int | None) -> tuple[float | None, float | None, float | None]:
-    if tier is None:
-        return None, None, None
-    if tier == 1:
-        t = CCRI_HW_TIERS[1]
-        return t["power_idle_w"], t["power_idle_min_w"], t["power_idle_max_w"]
-    return (
-        _weighted_idle("power_idle_w"),
-        _weighted_idle("power_idle_min_w"),
-        _weighted_idle("power_idle_max_w"),
-    )
-
-
 def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -133,11 +115,26 @@ def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
 
     df["power_combined_adj_factor"] = COMBINED_ADJUSTMENT_FACTOR
 
-    df["hw_config_tier"] = df.apply(assign_hw_tier, axis=1).astype("Int64")
+    df["hw_config_tier"] = df.apply(
+        lambda row: None if row.get("is_cloud_hosted", False)
+        else (1 if row["hw_arch"] == "ARM" else 4),
+        axis=1,
+    ).astype("Int64")
 
-    idle_values = df["hw_config_tier"].map(
-        lambda t: resolve_idle_power(None if pd.isna(t) else int(t))
-    )
+    def resolve_idle(tier):
+        if pd.isna(tier):
+            return None, None, None
+        t = int(tier)
+        if t == 1:
+            cfg = CCRI_HW_TIERS[1]
+            return cfg["power_idle_w"], cfg["power_idle_min_w"], cfg["power_idle_max_w"]
+        return (
+            sum(w * CCRI_HW_TIERS[t]["power_idle_w"]     for t, w in TIER_WEIGHTS.items()),
+            sum(w * CCRI_HW_TIERS[t]["power_idle_min_w"] for t, w in TIER_WEIGHTS.items()),
+            sum(w * CCRI_HW_TIERS[t]["power_idle_max_w"] for t, w in TIER_WEIGHTS.items()),
+        )
+
+    idle_values = df["hw_config_tier"].map(resolve_idle)
     df["power_idle_w"]     = idle_values.map(lambda x: x[0]).astype(float)
     df["power_idle_min_w"] = idle_values.map(lambda x: x[1]).astype(float)
     df["power_idle_max_w"] = idle_values.map(lambda x: x[2]).astype(float)
@@ -151,3 +148,43 @@ def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print(f"Loading '{SOURCE_CONFIG}' from {REPO_ID}")
+    print("=" * 60)
+
+    df = load_dataset(REPO_ID, name=SOURCE_CONFIG, split=SOURCE_SPLIT).to_pandas()
+    print(f"Loaded: {len(df)} rows x {len(df.columns)} columns\n")
+
+    df = infer_ccri_features(df)
+
+    total = len(df)
+    measured = int(df["ccri_measured"].sum())
+    print(f"CCRI coverage: {measured}/{total} ({100 * measured / total:.1f}%)")
+
+    unmeasured = (
+        df[~df["ccri_measured"]]
+        .groupby(["consensus_client", "execution_client"])
+        .size()
+        .sort_values(ascending=False)
+    )
+    print("Unmeasured client pairs:")
+    print(unmeasured.to_string())
+
+    print(f"\nColumns ({len(df.columns)}):")
+    for col in df.columns:
+        n_null = int(df[col].isna().sum())
+        print(f"  {col:<40} nulls: {n_null}/{total}")
+
+    print(f"\n{'=' * 60}")
+    print(f"Pushing to '{TARGET_CONFIG}'...")
+    print("=" * 60)
+
+    DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
+        REPO_ID,
+        config_name=TARGET_CONFIG,
+        commit_message="ccri_inference: add hw_config_tier, power_idle_w, power_node_w and related columns",
+    )
+    print(f"Done. https://huggingface.co/datasets/{REPO_ID}")
