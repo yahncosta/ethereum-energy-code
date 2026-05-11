@@ -114,7 +114,7 @@ print(f"  remaining rows                  : {len(df)}")
 print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
 print(f"  hw_arch x86                     : {(df['hw_arch'] == 'x86').sum()}")
 
-COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el"]
+COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el", "Protocols_el", "Protocols_cl"]
 df = df.drop(columns=[c for c in COLUMNS_TO_DROP if c in df.columns])
 
 print("\nPushing to pre_train_data...")
