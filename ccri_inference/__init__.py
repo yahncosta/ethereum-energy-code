@@ -1,1 +1,0 @@
-from ccri_inference.inference import infer_ccri_features

@@ -1,0 +1,44 @@
+import pandas as pd
+
+from sutton2022_inference.constants_su import (
+    ATTNETS_SATURATION_THRESHOLD,
+    GOSSIP_PHASE_NO_VALIDATORS,
+    GOSSIP_PHASE_RAMPING,
+    GOSSIP_PHASE_SATURATED,
+)
+
+
+def _syncnets_count(s: str) -> int:
+    if not s or s in ("0x00", "0x0000000000000000"):
+        return 0
+    try:
+        return bin(int(s, 16)).count("1")
+    except Exception:
+        return 0
+
+
+def _gossip_phase(attnets_num: float) -> str:
+    n = int(attnets_num) if not pd.isna(attnets_num) else 0
+    if n == 0:
+        return GOSSIP_PHASE_NO_VALIDATORS
+    if n < ATTNETS_SATURATION_THRESHOLD:
+        return GOSSIP_PHASE_RAMPING
+    return GOSSIP_PHASE_SATURATED
+
+
+def infer_sutton_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    df["syncnets_num"] = df["syncnets"].apply(lambda s: _syncnets_count(str(s)))
+
+    df["is_validator_node"] = (df["attnets_num"].fillna(0) > 0) | (df["syncnets_num"] > 0)
+
+    df["is_subnet_saturated"] = df["attnets_num"].fillna(0).apply(
+        lambda n: int(n) == ATTNETS_SATURATION_THRESHOLD
+    )
+
+    df["gossip_phase"] = df["attnets_num"].apply(_gossip_phase)
+
+    df["is_sync_committee_member"] = df["syncnets_num"] > 0
+
+    return df

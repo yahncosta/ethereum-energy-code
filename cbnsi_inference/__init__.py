@@ -1,1 +1,1 @@
-from cbnsi_inference.inference import infer_cbnsi_features
+from cbnsi_inference.inference_cb import infer_cbnsi_features
