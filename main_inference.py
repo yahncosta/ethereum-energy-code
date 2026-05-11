@@ -1,7 +1,8 @@
 from datasets import Dataset, DatasetDict, load_dataset
 
-from cloud_inference import infer_cloud_features
+from cbnsi_inference import infer_cbnsi_features
 from ccri_inference import infer_ccri_features
+from cloud_inference import infer_cloud_features
 
 REPO_ID = "yhackspacher/ethereum-crawl"
 SOURCE_CONFIG = "pre_train_data"
@@ -69,11 +70,17 @@ def main():
     print_cloud_summary(df)
 
     print("=" * 60)
-    print("STEP 3 — CCRI hardware & power inference")
+    print("STEP 3 — CCRI measured client-power inference")
     print("=" * 60)
 
     df = infer_ccri_features(df)
     print_ccri_summary(df)
+
+    print("=" * 60)
+    print("STEP 4 — CBNSI node-power inference")
+    print("=" * 60)
+
+    df = infer_cbnsi_features(df)
 
     print_dataset_summary(df)
 
@@ -84,7 +91,7 @@ def main():
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,
         config_name=TARGET_CONFIG,
-        commit_message=f"Update {TARGET_CONFIG} with cloud and CCRI inferred features",
+        commit_message=f"Update {TARGET_CONFIG} with cloud, CCRI, and CBNSI inferred features",
     )
 
     print(f"Done. Dataset pushed to: https://huggingface.co/datasets/{REPO_ID}")
