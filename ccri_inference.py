@@ -103,8 +103,8 @@ TIER_WEIGHTS: dict[int, float] = {4: 0.25, 5: 0.50, 6: 0.25}
 def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    if "is_cloud_hosted" not in df.columns:
-        df["is_cloud_hosted"] = False
+    if "cloud_provider" not in df.columns:
+        df["cloud_provider"] = None
 
     df["power_cl_marginal_w"] = df["consensus_client"].map(CCRI_CL_MARGINAL_W).astype(float)
     df["power_el_marginal_w"] = df["execution_client"].map(CCRI_EL_MARGINAL_W).astype(float)
@@ -116,7 +116,7 @@ def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
     df["power_combined_adj_factor"] = COMBINED_ADJUSTMENT_FACTOR
 
     df["hw_config_tier"] = df.apply(
-        lambda row: None if row.get("is_cloud_hosted", False)
+        lambda row: None if pd.notna(row["cloud_provider"])
         else (1 if row["hw_arch"] == "ARM" else 4),
         axis=1,
     ).astype("Int64")

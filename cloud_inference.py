@@ -31,10 +31,6 @@ _RIPE_ASN_MAP: dict[str, list[int]] = {
     "clouvider":    [62240],
 }
 
-_CLOUD_PROVIDERS: frozenset[str] = frozenset(
-    list(_OFFICIAL_PROVIDER_URLS.keys()) + list(_RIPE_ASN_MAP.keys())
-)
-
 
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -100,18 +96,17 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     print(f"  [cloud_inference] classifying {len(df)} IPs...")
     t0 = time.time()
 
-    def classify(ip_str: str) -> str:
+    def classify(ip_str: str) -> str | None:
         try:
             addr = ipaddress.ip_address(ip_str)
         except ValueError:
-            return "other"
+            return None
         for provider, idx in indices:
             if any(addr in net for net in idx.get(int(addr) >> 24, [])):
                 return provider
-        return "other"
+        return None
 
     df["cloud_provider"] = df["ip"].apply(classify)
-    df["is_cloud_hosted"] = df["cloud_provider"].isin(_CLOUD_PROVIDERS)
     print(f"  [cloud_inference] done in {time.time() - t0:.2f}s")
 
     return df
@@ -128,7 +123,7 @@ if __name__ == "__main__":
     df = infer_cloud_features(df)
 
     total = len(df)
-    cloud_count = int(df["is_cloud_hosted"].sum())
+    cloud_count = int(df["cloud_provider"].notna().sum())
     print(f"\nCloud-hosted: {cloud_count}/{total} ({100 * cloud_count / total:.1f}%)")
     print(df["cloud_provider"].value_counts().to_string())
 
@@ -139,6 +134,6 @@ if __name__ == "__main__":
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,
         config_name=TARGET_CONFIG,
-        commit_message="cloud_inference: add is_cloud_hosted and cloud_provider",
+        commit_message="cloud_inference: add cloud_provider (None when no cloud ASN matched)",
     )
     print(f"Done. https://huggingface.co/datasets/{REPO_ID}")
