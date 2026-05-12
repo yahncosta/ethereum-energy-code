@@ -1,0 +1,1 @@
+from web3pi2024_inference.inference_wp import infer_web3pi_features

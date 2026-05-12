@@ -4,6 +4,7 @@ from cbnsi_inference import infer_cbnsi_features
 from ccri2022_inference import infer_ccri_features
 from teads2021_inference import infer_teads_features
 from sutton2022_inference import infer_sutton_features
+from web3pi2024_inference import infer_web3pi_features
 
 REPO_ID = "yhackspacher/ethereum-crawl"
 SOURCE_CONFIG = "pre_train_data"
@@ -45,6 +46,12 @@ def print_ccri_summary(df):
     )
     print("Unmeasured client pairs:")
     print(unmeasured.to_string())
+    print()
+
+def print_web3pi_summary(df):
+    total = len(df)
+    override_count = int((df["power_node_w_source"] == "web3pi_empirical").sum())
+    print(f"Web3 Pi override applied: {override_count}/{total} ({100 * override_count / total:.1f}%)")
     print()
 
 
@@ -98,6 +105,12 @@ def main():
     print("STEP 5 — CBNSI: hardware tier and final node power estimation")
     print("=" * 60)
     df = infer_cbnsi_features(df)
+
+    print("=" * 60)
+    print("STEP 6 — Web3 Pi (2024): ARM Nimbus empirical power override")
+    print("=" * 60)
+    df = infer_web3pi_features(df)
+    print_web3pi_summary(df)
 
     print_dataset_summary(df)
 
