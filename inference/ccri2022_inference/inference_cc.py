@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ccri2022_inference.constants_cc import (
+from inference.ccri2022_inference.constants_cc import (
     CCRI_BEST_GUESS_TIER_WEIGHTS,
     CCRI_CL_MARGINAL_W,
     CCRI_EL_MARGINAL_W,

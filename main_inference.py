@@ -1,10 +1,10 @@
 from datasets import Dataset, DatasetDict, load_dataset
 
-from sutton2022_inference import infer_sutton_features
-from teads2021_inference import infer_teads_features
-from ccri2022_inference import infer_ccri_features
-from pankovska2024_inference import infer_pankovska_features
-from web3pi2024_inference import infer_web3pi_features
+from inference.sutton2022_inference.inference_su import infer_sutton_features
+from inference.teads2021_inference.inference_te import infer_teads_features
+from inference.ccri2022_inference.inference_cc import infer_ccri_features
+from inference.pankovska2024_inference.inference_pk import infer_pankovska_features
+from inference.web3pi2024_inference.inference_wp import infer_web3pi_features
 
 REPO_ID = "yhackspacher/ethereum-crawl"
 SOURCE_CONFIG = "pre_train_data"
@@ -134,7 +134,7 @@ def main():
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,
         config_name=TARGET_CONFIG,
-        commit_message="Remove cbnsi step and power_node_w_source label; provenance now implicit in pipeline order",
+        commit_message="Move inference modules into inference/ namespace package",
     )
     print(f"Done. Dataset pushed to: https://huggingface.co/datasets/{REPO_ID}")
 

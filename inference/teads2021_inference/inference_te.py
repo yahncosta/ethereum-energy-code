@@ -1,7 +1,7 @@
 import pandas as pd
 
-from teads2021_inference.constants_te import EC2_INSTANCE_POWER_W
-from pankovska2024_inference.constants_pk import (
+from inference.teads2021_inference.constants_te import EC2_INSTANCE_POWER_W
+from inference.pankovska2024_inference.constants_pk import (
     NODE_RAM_NON_VALIDATOR_GB,
     NODE_RAM_VALIDATOR_GB,
     NODE_VCPU_MIN,

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from sutton2022_inference.constants_su import (
+from inference.sutton2022_inference.constants_su import (
     ATTNETS_SATURATION_THRESHOLD,
     GOSSIP_PHASE_NO_VALIDATORS,
     GOSSIP_PHASE_RAMPING,

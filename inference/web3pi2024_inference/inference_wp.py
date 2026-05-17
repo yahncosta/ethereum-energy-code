@@ -1,6 +1,6 @@
 import pandas as pd
 
-from web3pi2024_inference.constants_wp import (
+from inference.web3pi2024_inference.constants_wp import (
     WEB3PI_CONSENSUS_CLIENT,
     WEB3PI_HW_ARCH,
     WEB3PI_POWER_W,
