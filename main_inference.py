@@ -35,15 +35,18 @@ def main():
     print("=" * 60)
     df = infer_ccri_features(df)
 
+    print("=" * 60)
+    print("STEP 5 — Proxy inference: marginal power estimates for unmeasured client combinations")
+    print("=" * 60)
     df = infer_proxy_features(df)
 
     print("=" * 60)
-    print("STEP 5 — Pankovska (2024): PUE factors, CCF fallback for non-AWS cloud, SSD overhead, cloud node power")
+    print("STEP 6 — Pankovska (2024): PUE factors, CCF fallback for non-AWS cloud, SSD overhead, cloud node power")
     print("=" * 60)
     df = infer_pankovska_features(df)
 
     print("=" * 60)
-    print("STEP 6 — Web3 Pi (2024): ARM Nimbus empirical power override")
+    print("STEP 7 — Web3 Pi (2024): ARM Nimbus empirical power override")
     print("=" * 60)
     df = infer_web3pi_features(df)
 
