@@ -5,6 +5,7 @@ from inference.teads2021_inference.inference_te import infer_teads_features
 from inference.ccri2022_inference.inference_cc import infer_ccri_features
 from inference.pankovska2024_inference.inference_pk import infer_pankovska_features
 from inference.web3pi2024_inference.inference_wp import infer_web3pi_features
+from inference.proxy_inference.inference_proxy import infer_proxy_features
 
 REPO_ID = "yhackspacher/ethereum-crawl"
 SOURCE_CONFIG = "pre_train_data"
@@ -113,6 +114,8 @@ def main():
     print("=" * 60)
     df = infer_ccri_features(df)
     print_ccri_summary(df)
+
+    df = infer_proxy_features(df)
 
     print("=" * 60)
     print("STEP 5 — Pankovska (2024): PUE factors, CCF fallback for non-AWS cloud, SSD overhead, cloud node power")

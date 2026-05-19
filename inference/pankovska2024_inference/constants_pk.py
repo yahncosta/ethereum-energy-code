@@ -1,37 +1,3 @@
-CCF_VCPU_MIN_W: dict[str, float] = {
-    "aws":          0.74,
-    "gcp":          0.71,
-    "azure":        0.78,
-    "oracle":       0.47,
-    "hetzner":      0.74,
-    "ovh":          0.74,
-    "contabo":      0.74,
-    "netcup":       0.74,
-    "latitude":     0.74,
-    "digitalocean": 0.74,
-    "vultr":        0.74,
-    "linode":       0.74,
-    "leaseweb":     0.74,
-    "clouvider":    0.74,
-}
-
-CCF_VCPU_MAX_W: dict[str, float] = {
-    "aws":          3.50,
-    "gcp":          4.26,
-    "azure":        3.76,
-    "oracle":       3.50,
-    "hetzner":      3.50,
-    "ovh":          3.50,
-    "contabo":      3.50,
-    "netcup":       3.50,
-    "latitude":     3.50,
-    "digitalocean": 3.50,
-    "vultr":        3.50,
-    "linode":       3.50,
-    "leaseweb":     3.50,
-    "clouvider":    3.50,
-}
-
 SSD_OVERHEAD_W: float = 5.0
 
 CLOUD_PUE: float = 1.2
