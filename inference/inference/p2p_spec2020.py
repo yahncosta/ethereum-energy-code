@@ -3,11 +3,9 @@ import pandas as pd
 from inference.constants.p2p_spec2020 import (
     ATTNETS_SATURATION_THRESHOLD,
     GOSSIP_PHASE_NO_VALIDATORS,
-    GOSSIP_PHASE_RAMPING,
     GOSSIP_PHASE_SATURATED,
+    GOSSIP_PHASE_RAMPING,
 )
-
-
 
 
 def _gossip_phase(attnets_num: float) -> str:
@@ -19,17 +17,10 @@ def _gossip_phase(attnets_num: float) -> str:
     return GOSSIP_PHASE_SATURATED
 
 
-def infer_p2p_metadata_features(df):
+def infer_p2p_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    df["is_validator_node"] = (df["attnets_num"].fillna(0) > 0) | (df["syncnets_num"] > 0)
-
-    df["is_subnet_saturated"] = df["attnets_num"].fillna(0).apply(
-        lambda n: int(n) == ATTNETS_SATURATION_THRESHOLD
-    )
-
     df["gossip_phase"] = df["attnets_num"].apply(_gossip_phase)
-
     df["is_sync_committee_member"] = df["syncnets_num"] > 0
 
     return df

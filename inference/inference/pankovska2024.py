@@ -11,6 +11,7 @@ from inference.constants.pankovska2024 import (
     NODE_RAM_VALIDATOR_GB,
     SSD_OVERHEAD_W,
 )
+from inference.constants.p2p_spec2020 import GOSSIP_PHASE_NO_VALIDATORS
 
 
 def _select_ec2_instance(is_validator: bool) -> str:
@@ -52,7 +53,7 @@ def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
 
     aws_mask = df["cloud_provider"] == "aws"
     for idx, row in df[aws_mask].iterrows():
-        is_validator = bool(row.get("is_validator_node", False))
+        is_validator = row["gossip_phase"] != GOSSIP_PHASE_NO_VALIDATORS or row["is_sync_committee_member"]
         df.at[idx, "ec2_instance_type"]     = _select_ec2_instance(is_validator)
         df.at[idx, "power_cloud_idle_w"]    = _avg_ec2_power(is_validator, "idle")
         df.at[idx, "power_cloud_at_load_w"] = _avg_ec2_power(is_validator, "pct100")
