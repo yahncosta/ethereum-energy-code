@@ -8,15 +8,6 @@ from inference.sutton2022_inference.constants_su import (
 )
 
 
-def _syncnets_count(s: str) -> int:
-    if not s or s in ("0x00", "0x0000000000000000"):
-        return 0
-    try:
-        return bin(int(s, 16)).count("1")
-    except Exception:
-        return 0
-
-
 def _gossip_phase(attnets_num: float) -> str:
     n = int(attnets_num) if not pd.isna(attnets_num) else 0
     if n == 0:
@@ -28,8 +19,6 @@ def _gossip_phase(attnets_num: float) -> str:
 
 def infer_sutton_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-
-    df["syncnets_num"] = df["syncnets"].apply(lambda s: _syncnets_count(str(s)))
 
     df["is_validator_node"] = (df["attnets_num"].fillna(0) > 0) | (df["syncnets_num"] > 0)
 

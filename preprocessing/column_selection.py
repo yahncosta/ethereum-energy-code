@@ -4,7 +4,7 @@ COLUMNS_TO_KEEP = {
     "ip":              "ip",
     "AgentVersion_cl": "AgentVersion_cl",
     "attnets_num_cl":  "attnets_num",
-    "syncnets_cl":     "syncnets",
+    "syncnets_cl":     "syncnets_num",
     "AgentVersion_el": "AgentVersion_el",
     "Protocols_cl":    "Protocols_cl",
     "Protocols_el":    "Protocols_el",
