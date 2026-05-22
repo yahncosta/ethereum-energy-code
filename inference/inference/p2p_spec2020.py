@@ -1,6 +1,6 @@
 import pandas as pd
 
-from inference.p2pspec2020_inference.constants_p2p import (
+from inference.constants.p2p_spec2020 import (
     ATTNETS_SATURATION_THRESHOLD,
     GOSSIP_PHASE_NO_VALIDATORS,
     GOSSIP_PHASE_RAMPING,

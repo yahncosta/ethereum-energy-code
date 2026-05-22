@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from inference.constants.constants_ccf import CCF_VCPU_MIN_W, CCF_VCPU_MAX_W
-from inference.constants.constants_te import EC2_INSTANCE_POWER_W
-from inference.pankovska2024_inference.constants_pk import (
+from inference.constants.ccf import CCF_VCPU_MIN_W, CCF_VCPU_MAX_W
+from inference.constants.teads import EC2_INSTANCE_POWER_W
+from inference.constants.pankovska2024 import (
     CLOUD_PUE,
     HOME_PUE,
     NODE_VCPU_MIN,

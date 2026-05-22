@@ -1,9 +1,9 @@
 import pandas as pd
 
-from inference.ccri2022_inference.constants_cc import (
+from inference.constants.ccri import (
     COMBINED_ADJUSTMENT_FACTOR,
 )
-from inference.proxy_inference.constants_proxy import (
+from inference.constants.proxy import (
     ERIGON_CAPLIN_COMBINED_MARGINAL_W,
     PROXY_CL_MARGINAL_W,
     PROXY_CL_SOURCE,
