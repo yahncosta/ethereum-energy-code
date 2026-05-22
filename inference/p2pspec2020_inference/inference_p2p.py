@@ -1,11 +1,13 @@
 import pandas as pd
 
-from inference.sutton2022_inference.constants_su import (
+from inference.p2pspec2020_inference.constants_p2p import (
     ATTNETS_SATURATION_THRESHOLD,
     GOSSIP_PHASE_NO_VALIDATORS,
     GOSSIP_PHASE_RAMPING,
     GOSSIP_PHASE_SATURATED,
 )
+
+
 
 
 def _gossip_phase(attnets_num: float) -> str:
@@ -17,7 +19,7 @@ def _gossip_phase(attnets_num: float) -> str:
     return GOSSIP_PHASE_SATURATED
 
 
-def infer_sutton_features(df: pd.DataFrame) -> pd.DataFrame:
+def infer_p2p_metadata_features(df):
     df = df.copy()
 
     df["is_validator_node"] = (df["attnets_num"].fillna(0) > 0) | (df["syncnets_num"] > 0)
