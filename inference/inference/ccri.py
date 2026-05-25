@@ -1,62 +1,50 @@
 import pandas as pd
 
 from inference.constants.ccri import (
-    CCRI_BEST_GUESS_TIER_WEIGHTS,
+    ARM_IDLE_W,
     CCRI_CL_MARGINAL_W,
     CCRI_EL_MARGINAL_W,
-    CCRI_HW_TIERS,
     COMBINED_ADJUSTMENT_FACTOR,
+    ERIGON_CAPLIN_COMBINED_MARGINAL_W,
+    PROXY_CL_MARGINAL_W,
+    PROXY_EL_MARGINAL_W,
+    WEIGHTED_IDLE_W,
 )
+
+_ALL_CL_MARGINAL_W = {**CCRI_CL_MARGINAL_W, **PROXY_CL_MARGINAL_W}
+_ALL_EL_MARGINAL_W = {**CCRI_EL_MARGINAL_W, **PROXY_EL_MARGINAL_W}
 
 
 def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    df["power_cl_marginal_w"] = df["consensus_client"].map(CCRI_CL_MARGINAL_W).astype(float)
-    df["power_el_marginal_w"] = df["execution_client"].map(CCRI_EL_MARGINAL_W).astype(float)
+    df["power_cl_marginal_w"] = df["consensus_client"].map(_ALL_CL_MARGINAL_W)
+    df["power_el_marginal_w"] = df["execution_client"].map(_ALL_EL_MARGINAL_W)
 
-    df["ccri_measured"] = df["power_cl_marginal_w"].notna() & df["power_el_marginal_w"].notna()
+    df["power_idle_w"] = df["hw_arch"].apply(
+        lambda arch: ARM_IDLE_W if arch == "ARM" else WEIGHTED_IDLE_W
+    )
 
-    df["power_combined_adj_factor"] = COMBINED_ADJUSTMENT_FACTOR
+    caplin_mask = (
+        (df["consensus_client"] == "caplin")
+        & (df["execution_client"] == "erigon")
+        & df["cloud_provider"].isna()
+    )
+    df.loc[caplin_mask, "power_el_marginal_w"] = ERIGON_CAPLIN_COMBINED_MARGINAL_W
+    df.loc[caplin_mask, "power_cl_marginal_w"] = 0.0
 
-    df["hw_config_tier"] = df.apply(
-        lambda row: None if pd.notna(row["cloud_provider"]) else (1 if row["hw_arch"] == "ARM" else 4),
-        axis=1,
-    ).astype("Int64")
-
-    idle_values = df["hw_config_tier"].map(_resolve_idle_power)
-    df["power_idle_w"]     = idle_values.map(lambda x: x[0]).astype(float)
-    df["power_idle_min_w"] = idle_values.map(lambda x: x[1]).astype(float)
-    df["power_idle_max_w"] = idle_values.map(lambda x: x[2]).astype(float)
-
-    bare_metal_mask = df["cloud_provider"].isna() & df["ccri_measured"] & df["power_idle_w"].notna()
+    bare_metal_mask = (
+        df["cloud_provider"].isna()
+        & df["power_cl_marginal_w"].notna()
+        & df["power_el_marginal_w"].notna()
+        & df["power_idle_w"].notna()
+    )
 
     df["power_node_w"] = float("nan")
     df.loc[bare_metal_mask, "power_node_w"] = (
-        (df.loc[bare_metal_mask, "power_el_marginal_w"] + df.loc[bare_metal_mask, "power_cl_marginal_w"])
-        * df.loc[bare_metal_mask, "power_combined_adj_factor"]
+        (df.loc[bare_metal_mask, "power_cl_marginal_w"] + df.loc[bare_metal_mask, "power_el_marginal_w"])
+        * COMBINED_ADJUSTMENT_FACTOR
         + df.loc[bare_metal_mask, "power_idle_w"]
     )
 
     return df
-
-
-def _resolve_idle_power(tier) -> tuple[float | None, float | None, float | None]:
-    if pd.isna(tier):
-        return None, None, None
-    tier = int(tier)
-    if tier == 1:
-        config = CCRI_HW_TIERS[1]
-        return config["power_idle_w"], config["power_idle_min_w"], config["power_idle_max_w"]
-    return (
-        _weighted_idle("power_idle_w"),
-        _weighted_idle("power_idle_min_w"),
-        _weighted_idle("power_idle_max_w"),
-    )
-
-
-def _weighted_idle(key: str) -> float:
-    return sum(
-        weight * CCRI_HW_TIERS[tier][key]
-        for tier, weight in CCRI_BEST_GUESS_TIER_WEIGHTS.items()
-    )
