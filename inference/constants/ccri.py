@@ -8,8 +8,6 @@ WEIGHTED_IDLE_W: float = sum(_TIER_WEIGHTS[t] * v for t, v in _IDLE.items())
 
 COMBINED_ADJUSTMENT_FACTOR: float = 0.91
 
-ERIGON_CAPLIN_COMBINED_MARGINAL_W: float = 4.0
-
 CCRI_CL_MARGINAL_W: dict[str, float] = {
     "lighthouse": 6.89,
     "prysm":      8.41,

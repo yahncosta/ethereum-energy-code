@@ -25,14 +25,6 @@ def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
         lambda arch: ARM_IDLE_W if arch == "ARM" else WEIGHTED_IDLE_W
     )
 
-    caplin_mask = (
-        (df["consensus_client"] == "caplin")
-        & (df["execution_client"] == "erigon")
-        & df["cloud_provider"].isna()
-    )
-    df.loc[caplin_mask, "power_el_marginal_w"] = ERIGON_CAPLIN_COMBINED_MARGINAL_W
-    df.loc[caplin_mask, "power_cl_marginal_w"] = 0.0
-
     bare_metal_mask = (
         df["cloud_provider"].isna()
         & df["power_cl_marginal_w"].notna()
