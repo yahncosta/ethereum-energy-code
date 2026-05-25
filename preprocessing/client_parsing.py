@@ -91,4 +91,8 @@ def drop_unresolvable_rows(df: pd.DataFrame) -> pd.DataFrame:
     print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
     print(f"  hw_arch x86                     : {(df['hw_arch'] == 'x86').sum()}")
 
+    caplin_invalid = (df["consensus_client"] == "caplin") & (df["execution_client"] != "erigon")
+    print(f"  dropped (caplin without erigon)  : {caplin_invalid.sum()}")
+    df = df[~caplin_invalid].reset_index(drop=True)
+
     return df
