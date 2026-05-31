@@ -1,7 +1,6 @@
 SSD_OVERHEAD_W: float = 5.0
 
 CLOUD_PUE: float = 1.2
-HOME_PUE: float = 2.0
 
 NODE_VCPU_MIN: int = 4
 NODE_RAM_NON_VALIDATOR_GB: int = 8
