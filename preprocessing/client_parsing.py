@@ -73,13 +73,6 @@ def _resolve_hw_arch(cl_arch, el_arch) -> str | None:
     return None
 
 
-def _resolve_os_token(cl_os, el_os) -> str | None:
-    for token in (cl_os, el_os):
-        if token is not None:
-            return token
-    return None
-
-
 def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -90,10 +83,10 @@ def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df["execution_client"], el_arch = zip(*el_parsed)
     df["hw_arch"] = [_resolve_hw_arch(c, e) for c, e in zip(cl_arch, el_arch)]
 
-    cl_os = df["AgentVersion_cl"].apply(_detect_os)
-    el_os = df["AgentVersion_el"].apply(_detect_os)
-    df["os_token"] = [_resolve_os_token(c, e) for c, e in zip(cl_os, el_os)]
-
+    df["os_token"] = df.apply(
+        lambda row: _detect_os(row["AgentVersion_cl"]) or _detect_os(row["AgentVersion_el"]),
+        axis=1,
+    )
     return df
 
 
