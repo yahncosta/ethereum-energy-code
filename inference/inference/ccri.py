@@ -1,7 +1,7 @@
 import pandas as pd
 
 from inference.constants.ccri import (
-    ARM_LINUX_NODE_W,
+    ARM_LINUX_NODE_W_WEB3PI,
     ARM_MACOS_IDLE_W,
     CCRI_CL_MARGINAL_W,
     CCRI_EL_MARGINAL_W,
@@ -47,7 +47,7 @@ def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
 
     df["power_node_w"] = float("nan")
 
-    df.loc[linux_arm_mask, "power_node_w"] = ARM_LINUX_NODE_W
+    df.loc[linux_arm_mask, "power_node_w"] = ARM_LINUX_NODE_W_WEB3PI
 
     df.loc[bare_metal_x86_mask, "power_node_w"] = (
         (df.loc[bare_metal_x86_mask, "power_cl_marginal_w"] + df.loc[bare_metal_x86_mask, "power_el_marginal_w"])

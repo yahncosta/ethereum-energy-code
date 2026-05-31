@@ -39,7 +39,7 @@ PROXY_EL_MARGINAL_W: dict[str, float] = {
     "reth":       CCRI_EL_MARGINAL_W["erigon"],
 }
 
-ARM_LINUX_NODE_W: float = 10.0
+ARM_LINUX_NODE_W_WEB3PI: float = 10.0
 
 _MACOS_IDLE_SAMPLES_W: list[float] = [6.8, 7.0]
 
