@@ -5,6 +5,8 @@ import pandas as pd
 _ARM_TOKENS = {"aarch64", "aarch_64", "arm64"}
 _X86_TOKENS = {"x86_64", "amd64", "linux-x64", "windows-x64", "linux-386", "x86_64-unknown-linux-gnu"}
 
+_OS_TOKENS = ["linux", "darwin", "macos", "osx", "windows", "freebsd"]
+
 _CL_PATTERNS = [
     ("lighthouse", re.compile(r"lighthouse", re.IGNORECASE)),
     ("prysm",      re.compile(r"prysm",      re.IGNORECASE)),
@@ -39,6 +41,16 @@ def _detect_arch(agent: str) -> str | None:
     return None
 
 
+def _detect_os(agent: str) -> str | None:
+    if not agent or (isinstance(agent, float) and np.isnan(agent)):
+        return None
+    low = agent.lower()
+    for token in _OS_TOKENS:
+        if token in low:
+            return token
+    return None
+
+
 def _match_client(agent: str, patterns) -> str | None:
     for name, pat in patterns:
         if pat.search(agent):
@@ -61,6 +73,13 @@ def _resolve_hw_arch(cl_arch, el_arch) -> str | None:
     return None
 
 
+def _resolve_os_token(cl_os, el_os) -> str | None:
+    for token in (cl_os, el_os):
+        if token is not None:
+            return token
+    return None
+
+
 def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -71,6 +90,10 @@ def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df["execution_client"], el_arch = zip(*el_parsed)
     df["hw_arch"] = [_resolve_hw_arch(c, e) for c, e in zip(cl_arch, el_arch)]
 
+    cl_os = df["AgentVersion_cl"].apply(_detect_os)
+    el_os = df["AgentVersion_el"].apply(_detect_os)
+    df["os_token"] = [_resolve_os_token(c, e) for c, e in zip(cl_os, el_os)]
+
     return df
 
 
@@ -80,19 +103,21 @@ def drop_unresolvable_rows(df: pd.DataFrame) -> pd.DataFrame:
     null_arch = df["hw_arch"].isna()
     null_cl   = df["consensus_client"].isna()
     null_el   = df["execution_client"].isna()
+    arm_no_os = (df["hw_arch"] == "ARM") & df["os_token"].isna()
 
-    df = df[~null_arch & ~null_cl & ~null_el].reset_index(drop=True)
+    df = df[~null_arch & ~null_cl & ~null_el & ~arm_no_os].reset_index(drop=True)
 
     print(f"  dropped (null hw_arch)          : {null_arch.sum()}")
     print(f"  dropped (null consensus_client) : {null_cl.sum()}")
     print(f"  dropped (null execution_client) : {null_el.sum()}")
+    print(f"  dropped (arm without os_token)  : {arm_no_os.sum()}")
     print(f"  dropped total (unique rows)     : {before - len(df)}")
     print(f"  remaining rows                  : {len(df)}")
     print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
     print(f"  hw_arch x86                     : {(df['hw_arch'] == 'x86').sum()}")
 
     caplin_invalid = (df["consensus_client"] == "caplin") & (df["execution_client"] != "erigon")
-    print(f"  dropped (caplin without erigon)  : {caplin_invalid.sum()}")
+    print(f"  dropped (caplin without erigon) : {caplin_invalid.sum()}")
     df = df[~caplin_invalid].reset_index(drop=True)
 
     return df
