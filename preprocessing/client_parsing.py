@@ -26,91 +26,47 @@ _EL_PATTERNS = [
 ]
 
 
-def _detect_arch(agent: str) -> str | None:
-    if not agent or (isinstance(agent, float) and np.isnan(agent)):
-        return None
-    low = agent.lower()
-    is_arm = any(tok in low for tok in _ARM_TOKENS)
-    is_x86 = any(tok in low for tok in _X86_TOKENS)
-    if is_arm and is_x86:
-        return None
-    if is_arm:
-        return "ARM"
-    if is_x86:
-        return "x86"
-    return None
-
-
-def _detect_os(agent: str) -> str | None:
-    if not agent or (isinstance(agent, float) and np.isnan(agent)):
-        return None
-    low = agent.lower()
-    for token in _OS_TOKENS:
-        if token in low:
-            return token
-    return None
-
-
-def _match_client(agent: str, patterns) -> str | None:
-    for name, pat in patterns:
-        if pat.search(agent):
-            return name
-    return None
-
-
-def _parse_agent(agent, patterns) -> tuple:
-    if not agent or (isinstance(agent, float) and np.isnan(agent)):
-        return None, None
-    return _match_client(agent, patterns), _detect_arch(agent)
-
-
-def _resolve_hw_arch(cl_arch, el_arch) -> str | None:
-    archs = {a for a in (cl_arch, el_arch) if a is not None}
-    if len(archs) > 1:
-        return None
-    if len(archs) == 1:
-        return archs.pop()
-    return None
-
-
 def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
-    cl_parsed = df["AgentVersion_cl"].apply(lambda v: _parse_agent(v, _CL_PATTERNS))
-    el_parsed = df["AgentVersion_el"].apply(lambda v: _parse_agent(v, _EL_PATTERNS))
+    def parse_agent(agent, patterns):
+        if not agent or (isinstance(agent, float) and np.isnan(agent)):
+            return None, None
+        low = agent.lower()
+        client = next((name for name, pat in patterns if pat.search(agent)), None)
+        is_arm = any(tok in low for tok in _ARM_TOKENS)
+        is_x86 = any(tok in low for tok in _X86_TOKENS)
+        arch = None if (is_arm and is_x86) else ("ARM" if is_arm else ("x86" if is_x86 else None))
+        return client, arch
 
-    df["consensus_client"], cl_arch = zip(*cl_parsed)
-    df["execution_client"], el_arch = zip(*el_parsed)
-    df["hw_arch"] = [_resolve_hw_arch(c, e) for c, e in zip(cl_arch, el_arch)]
+    cl_parsed = df["AgentVersion_cl"].apply(lambda v: parse_agent(v, _CL_PATTERNS))
+    el_parsed = df["AgentVersion_el"].apply(lambda v: parse_agent(v, _EL_PATTERNS))
 
-    df["os_token"] = df.apply(
-        lambda row: _detect_os(row["AgentVersion_cl"]) or _detect_os(row["AgentVersion_el"]),
-        axis=1,
-    )
-    return df
+    cl_clients, cl_arches = zip(*cl_parsed)
+    el_clients, el_arches = zip(*el_parsed)
 
+    df["consensus_client"] = list(cl_clients)
+    df["execution_client"] = list(el_clients)
 
-def drop_unresolvable_rows(df: pd.DataFrame) -> pd.DataFrame:
-    before = len(df)
+    def resolve_arch(c, e):
+        if c == e:
+            return c
+        if c is None:
+            return e
+        if e is None:
+            return c
+        return None
 
-    null_arch = df["hw_arch"].isna()
-    null_cl   = df["consensus_client"].isna()
-    null_el   = df["execution_client"].isna()
-    arm_no_os = (df["hw_arch"] == "ARM") & df["os_token"].isna()
+    df["hw_arch"] = [resolve_arch(c, e) for c, e in zip(cl_arches, el_arches)]
 
-    df = df[~null_arch & ~null_cl & ~null_el & ~arm_no_os].reset_index(drop=True)
+    def detect_os(row):
+        for agent in (row["AgentVersion_cl"], row["AgentVersion_el"]):
+            if agent and not (isinstance(agent, float) and np.isnan(agent)):
+                for tok in _OS_TOKENS:
+                    if tok in agent.lower():
+                        return tok
+        return None
 
-    print(f"  dropped (null hw_arch)          : {null_arch.sum()}")
-    print(f"  dropped (null consensus_client) : {null_cl.sum()}")
-    print(f"  dropped (null execution_client) : {null_el.sum()}")
-    print(f"  dropped (arm without os_token)  : {arm_no_os.sum()}")
-    print(f"  dropped total (unique rows)     : {before - len(df)}")
-    print(f"  remaining rows                  : {len(df)}")
-    print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
-    print(f"  hw_arch x86                     : {(df['hw_arch'] == 'x86').sum()}")
-
-    caplin_invalid = (df["consensus_client"] == "caplin") & (df["execution_client"] != "erigon")
-    print(f"  dropped (caplin without erigon) : {caplin_invalid.sum()}")
-    df = df[~caplin_invalid].reset_index(drop=True)
+    df["os_token"] = df.apply(detect_os, axis=1)
 
     return df

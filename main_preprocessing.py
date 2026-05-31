@@ -1,7 +1,7 @@
 from datasets import Dataset, DatasetDict, load_dataset
 
-from preprocessing.column_selection import drop_raw_columns, select_and_rename_columns
-from preprocessing.client_parsing import drop_unresolvable_rows, parse_clients_and_arch
+from preprocessing.column_selection import select_and_rename_columns, drop_and_clean_rows
+from preprocessing.client_parsing import parse_clients_and_arch
 from preprocessing.cloud_classification import assign_cloud_provider
 from preprocessing.syncnets_parsing import parse_syncnets
 
@@ -16,8 +16,7 @@ def main():
     df = select_and_rename_columns(df)
     df = parse_syncnets(df)
     df = parse_clients_and_arch(df)
-    df = drop_unresolvable_rows(df)
-    df = drop_raw_columns(df)
+    df = drop_and_clean_rows(df)
     df = assign_cloud_provider(df)
 
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
