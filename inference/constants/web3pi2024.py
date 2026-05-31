@@ -1,4 +1,0 @@
-WEB3PI_POWER_W: float = 10.0
-WEB3PI_CONSENSUS_CLIENT: str = "nimbus"
-WEB3PI_EXECUTION_CLIENT: str = "geth"
-WEB3PI_HW_ARCH: str = "ARM"
