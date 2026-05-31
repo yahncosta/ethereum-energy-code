@@ -1,5 +1,6 @@
 import collections
 import ipaddress
+import re
 import time
 
 import pandas as pd
@@ -8,7 +9,6 @@ import requests
 OFFICIAL_PROVIDER_URLS: dict[str, str] = {
     "aws":    "https://ip-ranges.amazonaws.com/ip-ranges.json",
     "gcp":    "https://www.gstatic.com/ipranges/cloud.json",
-    "azure":  "https://download.microsoft.com/download/7/1/d/71d86715-5596-4529-9b13-da13a5de5b63/ServiceTags_Public_20260427.json",
     "oracle": "https://docs.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
 }
 
@@ -26,11 +26,37 @@ RIPE_ASN_MAP: dict[str, list[int]] = {
 }
 
 
+def _get_azure_url() -> str:
+    r = requests.get(
+        "https://www.microsoft.com/en-us/download/confirmation.aspx?id=56519",
+        timeout=20,
+    )
+    r.raise_for_status()
+    match = re.search(
+        r'https://download\.microsoft\.com/download/[^"\']+ServiceTags_Public_\d+\.json',
+        r.text,
+    )
+    if not match:
+        raise ValueError("Could not find Azure IP ranges URL on Microsoft download page")
+    return match.group(0)
+
+
 def build_ip_indices() -> list[tuple[str, dict[int, list[ipaddress.IPv4Network]]]]:
     indices = []
 
+    try:
+        azure_url = _get_azure_url()
+        print(f"  azure: resolved URL -> {azure_url}")
+    except Exception as exc:
+        azure_url = None
+        print(f"  azure: FAILED to resolve URL — {exc}")
+
+    urls = {**OFFICIAL_PROVIDER_URLS}
+    if azure_url:
+        urls["azure"] = azure_url
+
     print("Fetching official IP ranges (AWS, GCP, Azure, Oracle)...")
-    for provider, url in OFFICIAL_PROVIDER_URLS.items():
+    for provider, url in urls.items():
         try:
             r = requests.get(url, timeout=20)
             r.raise_for_status()
