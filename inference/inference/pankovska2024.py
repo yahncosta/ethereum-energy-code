@@ -3,7 +3,6 @@ import pandas as pd
 
 from inference.constants.pankovska2024 import (
     CLOUD_PUE,
-    HOME_PUE,
     NODE_VCPU_MIN,
     NODE_RAM_NON_VALIDATOR_GB,
     NODE_RAM_VALIDATOR_GB,
@@ -17,8 +16,6 @@ from inference.constants.p2p_spec2020 import GOSSIP_PHASE_NO_VALIDATORS
 
 def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-
-    df["pue_factor"] = np.where(df["cloud_provider"].notna(), CLOUD_PUE, HOME_PUE)
 
     df["is_validator"] = (
         (df["gossip_phase"] != GOSSIP_PHASE_NO_VALIDATORS) | df["is_sync_committee_member"]
@@ -62,10 +59,8 @@ def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
     df.loc[cloud_mask, "power_node_w"] = (
-        df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W
+        (df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W) * CLOUD_PUE
     )
-
-    df["power_node_pue_adjusted_w"] = df["power_node_w"] * df["pue_factor"]
 
     df = df.drop(columns=["is_validator", "required_ram_gb"])
 
