@@ -3,7 +3,8 @@ import pandas as pd
 
 from inference.constants.pankovska2024 import (
     CLOUD_PUE,
-    NODE_VCPU_MIN,
+    NODE_VCPU_MIN_NON_VALIDATOR,
+    NODE_VCPU_MIN_VALIDATOR,
     NODE_RAM_NON_VALIDATOR_GB,
     NODE_RAM_VALIDATOR_GB,
     SSD_OVERHEAD_W,
@@ -12,6 +13,18 @@ from inference.constants.pankovska2024 import (
     CCF_VCPU_MAX_W,
 )
 from inference.constants.p2p_spec2020 import GOSSIP_PHASE_NO_VALIDATORS
+
+_ELIGIBLE_FAMILIES = ("m5.", "m5a.", "m6i.")
+
+
+def _avg_pct100(candidates: dict) -> float:
+    vals = [v["pct100"] for v in candidates.values()]
+    return sum(vals) / len(vals) if vals else 0.0
+
+
+def _avg_idle(candidates: dict) -> float:
+    vals = [v["idle"] for v in candidates.values()]
+    return sum(vals) / len(vals) if vals else 0.0
 
 
 def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -22,39 +35,33 @@ def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     df["required_ram_gb"] = np.where(df["is_validator"], NODE_RAM_VALIDATOR_GB, NODE_RAM_NON_VALIDATOR_GB)
-
-    ec2_candidates = {
-        k: v for k, v in EC2_INSTANCE_POWER_W.items()
-        if v["vcpu"] >= NODE_VCPU_MIN
-    }
+    df["required_vcpu"] = np.where(df["is_validator"], NODE_VCPU_MIN_VALIDATOR, NODE_VCPU_MIN_NON_VALIDATOR)
 
     aws_mask = df["cloud_provider"] == "aws"
     for idx, row in df[aws_mask].iterrows():
-        eligible = {
-            k: v for k, v in ec2_candidates.items()
-            if v["ram_gb"] >= row["required_ram_gb"]
+        candidates = {
+            k: v for k, v in EC2_INSTANCE_POWER_W.items()
+            if v["vcpu"] >= row["required_vcpu"]
+            and v["ram_gb"] >= row["required_ram_gb"]
+            and any(k.startswith(f) for f in _ELIGIBLE_FAMILIES)
         }
-        if not eligible:
-            eligible = {"m5.xlarge": EC2_INSTANCE_POWER_W["m5.xlarge"]}
 
-        avg_idle = sum(
-            v["idle"] for k, v in eligible.items()
-            if any(k.startswith(p) for p in ("m5.", "m5a.", "t3."))
-        ) / max(sum(1 for k in eligible if any(k.startswith(p) for p in ("m5.", "m5a.", "t3."))), 1)
+        if not candidates:
+            candidates = {
+                k: v for k, v in EC2_INSTANCE_POWER_W.items()
+                if any(k.startswith(f) for f in _ELIGIBLE_FAMILIES)
+                and v["vcpu"] >= row["required_vcpu"]
+            }
 
-        avg_load = sum(
-            v["pct100"] for k, v in eligible.items()
-            if any(k.startswith(p) for p in ("m5.", "m5a.", "t3."))
-        ) / max(sum(1 for k in eligible if any(k.startswith(p) for p in ("m5.", "m5a.", "t3."))), 1)
-
-        df.at[idx, "power_cloud_idle_w"] = avg_idle
-        df.at[idx, "power_cloud_at_load_w"] = avg_load
+        df.at[idx, "power_cloud_idle_w"] = _avg_idle(candidates)
+        df.at[idx, "power_cloud_at_load_w"] = _avg_pct100(candidates)
 
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
     for idx, row in df[non_aws_cloud_mask].iterrows():
-        min_w = CCF_VCPU_MIN_W.get(row["cloud_provider"], 0.74) * NODE_VCPU_MIN
-        max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], 3.50) * NODE_VCPU_MIN
-        df.at[idx, "power_cloud_idle_w"] = min_w + 0.0 * (max_w - min_w) + SSD_OVERHEAD_W
+        vcpu_min = row["required_vcpu"]
+        min_w = CCF_VCPU_MIN_W.get(row["cloud_provider"], 0.74) * vcpu_min
+        max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], 3.50) * vcpu_min
+        df.at[idx, "power_cloud_idle_w"] = min_w + SSD_OVERHEAD_W
         df.at[idx, "power_cloud_at_load_w"] = min_w + 0.5 * (max_w - min_w) + SSD_OVERHEAD_W
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
@@ -62,6 +69,6 @@ def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
         (df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W) * CLOUD_PUE
     )
 
-    df = df.drop(columns=["is_validator", "required_ram_gb"])
+    df = df.drop(columns=["is_validator", "required_ram_gb", "required_vcpu"])
 
     return df
