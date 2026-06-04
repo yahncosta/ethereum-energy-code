@@ -14,9 +14,6 @@ from inference.constants.pankovska2024 import (
 )
 from inference.constants.p2p_spec2020 import GOSSIP_PHASE_NO_VALIDATORS
 
-_ELIGIBLE_FAMILIES = ("m5.", "m5a.", "m6i.")
-
-
 def _avg_pct100(candidates: dict) -> float:
     vals = [v["pct100"] for v in candidates.values()]
     return sum(vals) / len(vals) if vals else 0.0
@@ -43,15 +40,10 @@ def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
             k: v for k, v in EC2_INSTANCE_POWER_W.items()
             if v["vcpu"] >= row["required_vcpu"]
             and v["ram_gb"] >= row["required_ram_gb"]
-            and any(k.startswith(f) for f in _ELIGIBLE_FAMILIES)
         }
 
         if not candidates:
-            candidates = {
-                k: v for k, v in EC2_INSTANCE_POWER_W.items()
-                if any(k.startswith(f) for f in _ELIGIBLE_FAMILIES)
-                and v["vcpu"] >= row["required_vcpu"]
-            }
+            raise ValueError("No EC2 candidates found.")
 
         df.at[idx, "power_cloud_idle_w"] = _avg_idle(candidates)
         df.at[idx, "power_cloud_at_load_w"] = _avg_pct100(candidates)
