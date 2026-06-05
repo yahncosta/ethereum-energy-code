@@ -10,7 +10,6 @@ NODE_RAM_VALIDATOR_GB: int = 64
 _M6I_INSTANCES: dict[str, dict] = {
     "m6i.2xlarge": {"vcpu": 8,  "ram_gb": 32,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 38.20, "ram_w_100": 19.20, "delta": 7.5},
     "m6i.4xlarge": {"vcpu": 16, "ram_gb": 64,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 76.39, "ram_w_100": 38.40, "delta": 15.0},
-    "m6i.8xlarge": {"vcpu": 32, "ram_gb": 128, "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 152.78,"ram_w_100": 76.80, "delta": 30.0},
 }
 
 _R6I_INSTANCES: dict[str, dict] = {
