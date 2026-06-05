@@ -43,7 +43,7 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
     for idx, row in df[non_aws_cloud_mask].iterrows():
         vcpu_min = row["required_vcpu"]
-        max_w = _ALL_VCPU_MAX_W.get(row["cloud_provider"], _ALL_VCPU_MAX_W["aws"]) * vcpu_min
+        max_w = _ALL_VCPU_MAX_W[row["cloud_provider"]] * vcpu_min
         df.at[idx, "power_cloud_at_load_w"] = max_w
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()

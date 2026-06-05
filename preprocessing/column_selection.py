@@ -1,4 +1,5 @@
 import pandas as pd
+from inference.constants.cloud import CCF_VCPU_MAX_W, NON_HYPERSCALE_VCPU_MAX_W
 
 COLUMNS_TO_KEEP = {
     "ip":              "ip",
@@ -11,6 +12,8 @@ COLUMNS_TO_KEEP = {
 }
 
 COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el", "Protocols_el", "Protocols_cl"]
+
+_KNOWN_CLOUD_PROVIDERS = set(CCF_VCPU_MAX_W) | set(NON_HYPERSCALE_VCPU_MAX_W)
 
 
 def select_and_rename_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -28,13 +31,15 @@ def drop_and_clean_rows(df: pd.DataFrame) -> pd.DataFrame:
     null_cl   = df["consensus_client"].isna()
     null_el   = df["execution_client"].isna()
     arm_no_os = (df["hw_arch"] == "ARM") & df["os_token"].isna()
+    unknown_cloud = df["cloud_provider"].notna() & ~df["cloud_provider"].isin(_KNOWN_CLOUD_PROVIDERS)
 
-    df = df[~null_arch & ~null_cl & ~null_el & ~arm_no_os].reset_index(drop=True)
+    df = df[~null_arch & ~null_cl & ~null_el & ~arm_no_os & ~unknown_cloud].reset_index(drop=True)
 
     print(f"  dropped (null hw_arch)          : {null_arch.sum()}")
     print(f"  dropped (null consensus_client) : {null_cl.sum()}")
     print(f"  dropped (null execution_client) : {null_el.sum()}")
     print(f"  dropped (arm without os_token)  : {arm_no_os.sum()}")
+    print(f"  dropped (unknown cloud provider): {unknown_cloud.sum()}")
     print(f"  dropped total (unique rows)     : {before - len(df)}")
     print(f"  remaining rows                  : {len(df)}")
     print(f"  hw_arch ARM                     : {(df['hw_arch'] == 'ARM').sum()}")
