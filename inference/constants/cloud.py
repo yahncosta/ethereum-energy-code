@@ -48,6 +48,7 @@ _PROVIDER_MICROARCHS: dict[str, list[str]] = {
     "leaseweb":     ["Cascade Lake", "Sapphire Rapids", "EPYC 2nd Gen", "EPYC 3rd Gen"],
     "clouvider":    ["Ice Lake", "EPYC 3rd Gen", "EPYC 4th Gen"],
     "latitude":     ["EPYC 3rd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
+    "oracle":       ["EPYC 3rd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
 }
 
 NON_HYPERSCALE_VCPU_MAX_W: dict[str, float] = {
