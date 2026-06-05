@@ -13,11 +13,6 @@ from inference.constants.cloud import (
 )
 from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
 
-def _avg_pct100(candidates: dict) -> float:
-    vals = [v["pct100"] for v in candidates.values()]
-    return sum(vals) / len(vals) if vals else 0.0
-
-
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -39,7 +34,8 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         if not candidates:
             raise ValueError("No EC2 candidates found.")
 
-        df.at[idx, "power_cloud_at_load_w"] = _avg_pct100(candidates)
+        pct100_vals = [v["pct100"] for v in candidates.values()]
+        df.at[idx, "power_cloud_at_load_w"] = sum(pct100_vals) / len(pct100_vals)
 
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
     for idx, row in df[non_aws_cloud_mask].iterrows():
