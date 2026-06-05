@@ -9,12 +9,9 @@ from inference.constants.cloud import (
     NODE_RAM_VALIDATOR_GB,
     SSD_OVERHEAD_W_PANKOVSKA,
     EC2_INSTANCE_POWER_W,
-    CCF_VCPU_MAX_W,
-    NON_HYPERSCALE_VCPU_MAX_W,
+    _ALL_VCPU_MAX_W,
 )
 from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
-
-_ALL_VCPU_MAX_W: dict[str, float] = {**CCF_VCPU_MAX_W, **NON_HYPERSCALE_VCPU_MAX_W}
 
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
