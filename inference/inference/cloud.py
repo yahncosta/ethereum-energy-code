@@ -53,8 +53,8 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         vcpu_min = row["required_vcpu"]
         min_w = CCF_VCPU_MIN_W.get(row["cloud_provider"], 0.74) * vcpu_min
         max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], 3.50) * vcpu_min
-        df.at[idx, "power_cloud_idle_w"] = min_w + SSD_OVERHEAD_W
-        df.at[idx, "power_cloud_at_load_w"] = min_w + 0.5 * (max_w - min_w) + SSD_OVERHEAD_W
+        df.at[idx, "power_cloud_idle_w"] = min_w
+        df.at[idx, "power_cloud_at_load_w"] = min_w + 0.5 * (max_w - min_w)
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
     df.loc[cloud_mask, "power_node_w"] = (
