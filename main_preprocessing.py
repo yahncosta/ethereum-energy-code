@@ -16,8 +16,8 @@ def main():
     df = select_and_rename_columns(df)
     df = parse_syncnets(df)
     df = parse_clients_and_arch(df)
-    df = drop_and_clean_rows(df)
     df = assign_cloud_provider(df)
+    df = drop_and_clean_rows(df) 
 
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,
