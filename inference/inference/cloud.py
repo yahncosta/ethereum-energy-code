@@ -19,11 +19,6 @@ def _avg_pct100(candidates: dict) -> float:
     return sum(vals) / len(vals) if vals else 0.0
 
 
-def _avg_idle(candidates: dict) -> float:
-    vals = [v["idle"] for v in candidates.values()]
-    return sum(vals) / len(vals) if vals else 0.0
-
-
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -45,7 +40,6 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         if not candidates:
             raise ValueError("No EC2 candidates found.")
 
-        df.at[idx, "power_cloud_idle_w"] = _avg_idle(candidates)
         df.at[idx, "power_cloud_at_load_w"] = _avg_pct100(candidates)
 
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
@@ -53,7 +47,6 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         vcpu_min = row["required_vcpu"]
         min_w = CCF_VCPU_MIN_W.get(row["cloud_provider"], 0.74) * vcpu_min
         max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], 3.50) * vcpu_min
-        df.at[idx, "power_cloud_idle_w"] = min_w
         df.at[idx, "power_cloud_at_load_w"] = min_w + 0.5 * (max_w - min_w)
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
