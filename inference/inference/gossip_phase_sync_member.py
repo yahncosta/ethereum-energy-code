@@ -1,6 +1,6 @@
 import pandas as pd
 
-from inference.constants.p2p_spec2020 import (
+from inference.constants.gossip_phase_sync_member import (
     ATTNETS_SATURATION_THRESHOLD,
     GOSSIP_PHASE_NO_VALIDATORS,
     GOSSIP_PHASE_SATURATED,
@@ -17,7 +17,7 @@ def _gossip_phase(attnets_num: float) -> str:
     return GOSSIP_PHASE_SATURATED
 
 
-def infer_p2p_metadata_features(df: pd.DataFrame) -> pd.DataFrame:
+def infer_gossip_sync_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     df["gossip_phase"] = df["attnets_num"].apply(_gossip_phase)

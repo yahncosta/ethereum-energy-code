@@ -1,6 +1,6 @@
 import pandas as pd
 
-from inference.constants.ccri import (
+from inference.constants.bare_metal import (
     ARM_LINUX_NODE_W_WEB3PI,
     ARM_MACOS_IDLE_W,
     CCRI_CL_MARGINAL_W,
@@ -21,7 +21,7 @@ def _is_macos(os_token: str | None) -> bool:
     return os_token in _MACOS_OS_TOKENS
 
 
-def infer_ccri_features(df: pd.DataFrame) -> pd.DataFrame:
+def infer_bare_metal_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     df["power_cl_marginal_w"] = df["consensus_client"].map(_ALL_CL_MARGINAL_W)

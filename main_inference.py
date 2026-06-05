@@ -1,8 +1,8 @@
 from datasets import Dataset, DatasetDict, load_dataset
 
-from inference.inference.p2p_spec2020 import infer_p2p_metadata_features
-from inference.inference.ccri import infer_ccri_features
-from inference.inference.pankovska2024 import infer_pankovska_features
+from inference.inference.gossip_phase_sync_member import infer_gossip_sync_features
+from inference.inference.bare_metal import infer_bare_metal_features
+from inference.inference.cloud import infer_cloud_features
 
 REPO_ID = "yhackspacher/ethereum-crawl"
 SOURCE_CONFIG = "pre_train_data"
@@ -12,9 +12,9 @@ SOURCE_SPLIT = "train"
 
 def main():
     df = load_dataset(REPO_ID, name=SOURCE_CONFIG, split=SOURCE_SPLIT).to_pandas()
-    df = infer_p2p_metadata_features(df)
-    df = infer_ccri_features(df)
-    df = infer_pankovska_features(df)
+    df = infer_gossip_sync_features(df)
+    df = infer_bare_metal_features(df)
+    df = infer_cloud_features(df)
 
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,

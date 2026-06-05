@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from inference.constants.pankovska2024 import (
+from inference.constants.cloud import (
     CLOUD_PUE,
     NODE_VCPU_MIN_NON_VALIDATOR,
     NODE_VCPU_MIN_VALIDATOR,
@@ -12,7 +12,7 @@ from inference.constants.pankovska2024 import (
     CCF_VCPU_MIN_W,
     CCF_VCPU_MAX_W,
 )
-from inference.constants.p2p_spec2020 import GOSSIP_PHASE_NO_VALIDATORS
+from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
 
 def _avg_pct100(candidates: dict) -> float:
     vals = [v["pct100"] for v in candidates.values()]
@@ -24,7 +24,7 @@ def _avg_idle(candidates: dict) -> float:
     return sum(vals) / len(vals) if vals else 0.0
 
 
-def infer_pankovska_features(df: pd.DataFrame) -> pd.DataFrame:
+def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     df["is_validator"] = (
