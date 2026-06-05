@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 
 from inference.constants.cloud import (
-    CLOUD_PUE,
+    CLOUD_PUE_PANKOVSKA,
     NODE_VCPU_MIN_NON_VALIDATOR,
     NODE_VCPU_MIN_VALIDATOR,
     NODE_RAM_NON_VALIDATOR_GB,
     NODE_RAM_VALIDATOR_GB,
-    SSD_OVERHEAD_W,
+    SSD_OVERHEAD_W_PANKOVSKA,
     EC2_INSTANCE_POWER_W,
     CCF_VCPU_MAX_W,
 )
@@ -45,7 +45,7 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
     df.loc[cloud_mask, "power_node_w"] = (
-        (df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W) * CLOUD_PUE
+        (df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W_PANKOVSKA) * CLOUD_PUE_PANKOVSKA
     )
 
     df = df.drop(columns=["is_validator", "required_ram_gb", "required_vcpu"])
