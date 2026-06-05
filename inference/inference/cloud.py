@@ -10,8 +10,11 @@ from inference.constants.cloud import (
     SSD_OVERHEAD_W_PANKOVSKA,
     EC2_INSTANCE_POWER_W,
     CCF_VCPU_MAX_W,
+    NON_HYPERSCALE_VCPU_MAX_W,
 )
 from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
+
+_ALL_VCPU_MAX_W: dict[str, float] = {**CCF_VCPU_MAX_W, **NON_HYPERSCALE_VCPU_MAX_W}
 
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -40,7 +43,7 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
     for idx, row in df[non_aws_cloud_mask].iterrows():
         vcpu_min = row["required_vcpu"]
-        max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], CCF_VCPU_MAX_W.get("aws")) * vcpu_min
+        max_w = _ALL_VCPU_MAX_W.get(row["cloud_provider"], _ALL_VCPU_MAX_W["aws"]) * vcpu_min
         df.at[idx, "power_cloud_at_load_w"] = max_w
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
