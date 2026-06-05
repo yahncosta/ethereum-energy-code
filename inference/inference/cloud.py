@@ -9,7 +9,6 @@ from inference.constants.cloud import (
     NODE_RAM_VALIDATOR_GB,
     SSD_OVERHEAD_W,
     EC2_INSTANCE_POWER_W,
-    CCF_VCPU_MIN_W,
     CCF_VCPU_MAX_W,
 )
 from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
@@ -45,9 +44,8 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     non_aws_cloud_mask = df["cloud_provider"].notna() & (df["cloud_provider"] != "aws")
     for idx, row in df[non_aws_cloud_mask].iterrows():
         vcpu_min = row["required_vcpu"]
-        min_w = CCF_VCPU_MIN_W.get(row["cloud_provider"], 0.74) * vcpu_min
         max_w = CCF_VCPU_MAX_W.get(row["cloud_provider"], 3.50) * vcpu_min
-        df.at[idx, "power_cloud_at_load_w"] = min_w + 0.5 * (max_w - min_w)
+        df.at[idx, "power_cloud_at_load_w"] = max_w
 
     cloud_mask = df["cloud_provider"].notna() & df["power_cloud_at_load_w"].notna()
     df.loc[cloud_mask, "power_node_w"] = (

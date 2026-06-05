@@ -19,23 +19,6 @@ EC2_INSTANCE_POWER_W: dict[str, dict[str, float]] = {
     "m6i.8xlarge":  {"vcpu": 32, "ram_gb": 128, "idle": 73.02,  "pct10": 116.14, "pct50": 194.04, "pct100": 259.58},
 }
 
-CCF_VCPU_MIN_W: dict[str, float] = {
-    "aws":          0.74,
-    "gcp":          0.71,
-    "azure":        0.78,
-    "oracle":       0.47,
-    "hetzner":      0.74,
-    "ovh":          0.74,
-    "contabo":      0.74,
-    "netcup":       0.74,
-    "latitude":     0.74,
-    "digitalocean": 0.74,
-    "vultr":        0.74,
-    "linode":       0.74,
-    "leaseweb":     0.74,
-    "clouvider":    0.74,
-}
-
 CCF_VCPU_MAX_W: dict[str, float] = {
     "aws":          3.50,
     "gcp":          4.26,
