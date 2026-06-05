@@ -7,81 +7,31 @@ NODE_VCPU_MIN_VALIDATOR: int = 8
 NODE_RAM_NON_VALIDATOR_GB: int = 32
 NODE_RAM_VALIDATOR_GB: int = 64
 
-_M6I_CPU_NAME: str = "Xeon Platinum 8375C"
-_R6I_CPU_NAME: str = "Xeon Platinum 8375C"
-
-_M6I_RAM_GB: dict[str, int] = {
-    "m6i.2xlarge": 32,
-    "m6i.4xlarge": 64,
-    "m6i.8xlarge": 128,
+_M6I_INSTANCES: dict[str, dict] = {
+    "m6i.2xlarge": {"vcpu": 8,  "ram_gb": 32,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 38.20, "ram_w_100": 19.20, "delta": 7.5},
+    "m6i.4xlarge": {"vcpu": 16, "ram_gb": 64,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 76.39, "ram_w_100": 38.40, "delta": 15.0},
+    "m6i.8xlarge": {"vcpu": 32, "ram_gb": 128, "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 152.78,"ram_w_100": 76.80, "delta": 30.0},
 }
 
-_R6I_RAM_GB: dict[str, int] = {
-    "r6i.2xlarge": 64,
-    "r6i.4xlarge": 128,
+_R6I_INSTANCES: dict[str, dict] = {
+    "r6i.2xlarge": {"vcpu": 8,  "ram_gb": 64,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": _M6I_INSTANCES["m6i.2xlarge"]["pkg_w_100"], "ram_w_100": 2 * _M6I_INSTANCES["m6i.2xlarge"]["ram_w_100"], "delta": _M6I_INSTANCES["m6i.2xlarge"]["delta"]},
+    "r6i.4xlarge": {"vcpu": 16, "ram_gb": 128, "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": _M6I_INSTANCES["m6i.4xlarge"]["pkg_w_100"], "ram_w_100": 2 * _M6I_INSTANCES["m6i.4xlarge"]["ram_w_100"], "delta": _M6I_INSTANCES["m6i.4xlarge"]["delta"]},
 }
 
-_M6I_PKG_W_100: dict[str, float] = {
-    "m6i.2xlarge": 38.20,
-    "m6i.4xlarge": 76.39,
-    "m6i.8xlarge": 152.78,
-}
-
-_M6I_RAM_W_100: dict[str, float] = {
-    "m6i.2xlarge": 19.20,
-    "m6i.4xlarge": 38.40,
-    "m6i.8xlarge": 76.80,
-}
-
-_M6I_DELTA: dict[str, float] = {
-    "m6i.2xlarge": 7.5,
-    "m6i.4xlarge": 15.0,
-    "m6i.8xlarge": 30.0,
+_X86_INSTANCES_PCT100: dict[str, dict] = {
+    name: {
+        "vcpu":   v["vcpu"],
+        "ram_gb": v["ram_gb"],
+        "arch":   v["arch"],
+        "pct100": v["pkg_w_100"] + v["ram_w_100"] + v["delta"],
+    }
+    for name, v in {**_M6I_INSTANCES, **_R6I_INSTANCES}.items()
 }
 
 EC2_INSTANCE_POWER_W: dict[str, dict] = {
-    "m6i.2xlarge": {
-        "vcpu":   8,
-        "ram_gb": _M6I_RAM_GB["m6i.2xlarge"],
-        "arch":   "x86",
-        "pct100": _M6I_PKG_W_100["m6i.2xlarge"] + _M6I_RAM_W_100["m6i.2xlarge"] + _M6I_DELTA["m6i.2xlarge"],
-    },
-    "m6i.4xlarge": {
-        "vcpu":   16,
-        "ram_gb": _M6I_RAM_GB["m6i.4xlarge"],
-        "arch":   "x86",
-        "pct100": _M6I_PKG_W_100["m6i.4xlarge"] + _M6I_RAM_W_100["m6i.4xlarge"] + _M6I_DELTA["m6i.4xlarge"],
-    },
-    "m6i.8xlarge": {
-        "vcpu":   32,
-        "ram_gb": _M6I_RAM_GB["m6i.8xlarge"],
-        "arch":   "x86",
-        "pct100": _M6I_PKG_W_100["m6i.8xlarge"] + _M6I_RAM_W_100["m6i.8xlarge"] + _M6I_DELTA["m6i.8xlarge"],
-    },
-    "r6i.2xlarge": {
-        "vcpu":   8,
-        "ram_gb": _R6I_RAM_GB["r6i.2xlarge"],
-        "arch":   "x86",
-        "pct100": _M6I_PKG_W_100["m6i.2xlarge"] + 2 * _M6I_RAM_W_100["m6i.2xlarge"] + _M6I_DELTA["m6i.2xlarge"],
-    },
-    "r6i.4xlarge": {
-        "vcpu":   16,
-        "ram_gb": _R6I_RAM_GB["r6i.4xlarge"],
-        "arch":   "x86",
-        "pct100": _M6I_PKG_W_100["m6i.4xlarge"] + 2 * _M6I_RAM_W_100["m6i.4xlarge"] + _M6I_DELTA["m6i.4xlarge"],
-    },
-    "r6g.2xlarge": {
-        "vcpu":   8,
-        "ram_gb": 64,
-        "arch":   "ARM",
-        "pct100": 61.20,
-    },
-    "r6g.4xlarge": {
-        "vcpu":   16,
-        "ram_gb": 128,
-        "arch":   "ARM",
-        "pct100": 122.50,
-    },
+    **_X86_INSTANCES_PCT100,
+    "r6g.2xlarge": {"vcpu": 8,  "ram_gb": 64,  "arch": "ARM", "pct100": 61.20},
+    "r6g.4xlarge": {"vcpu": 16, "ram_gb": 128, "arch": "ARM", "pct100": 122.50},
 }
 
 CCF_VCPU_MAX_W: dict[str, float] = {
