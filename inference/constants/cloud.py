@@ -8,8 +8,8 @@ NODE_RAM_NON_VALIDATOR_GB: int = 32
 NODE_RAM_VALIDATOR_GB: int = 64
 
 _M6I_INSTANCES: dict[str, dict] = {
-    "m6i.2xlarge": {"vcpu": 8,  "ram_gb": 32,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 38.20, "ram_w_100": 19.20, "delta": 7.5},
-    "m6i.4xlarge": {"vcpu": 16, "ram_gb": 64,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 76.39, "ram_w_100": 38.40, "delta": 15.0},
+    "m6i.2xlarge": {"vcpu": 8,  "ram_gb": 32,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 38.20, "ram_w_100": 19.20, "delta": 7.5,  "pct100": 64.90},
+    "m6i.4xlarge": {"vcpu": 16, "ram_gb": 64,  "arch": "x86", "cpu": "Xeon Platinum 8375C", "pkg_w_100": 76.39, "ram_w_100": 38.40, "delta": 15.0, "pct100": 129.79},
 }
 
 _R6I_INSTANCES: dict[str, dict] = {
@@ -22,9 +22,17 @@ _X86_INSTANCES_PCT100: dict[str, dict] = {
         "vcpu":   v["vcpu"],
         "ram_gb": v["ram_gb"],
         "arch":   v["arch"],
+        "pct100": v["pct100"],
+    }
+    for name, v in _M6I_INSTANCES.items()
+} | {
+    name: {
+        "vcpu":   v["vcpu"],
+        "ram_gb": v["ram_gb"],
+        "arch":   v["arch"],
         "pct100": v["pkg_w_100"] + v["ram_w_100"] + v["delta"],
     }
-    for name, v in {**_M6I_INSTANCES, **_R6I_INSTANCES}.items()
+    for name, v in _R6I_INSTANCES.items()
 }
 
 EC2_INSTANCE_POWER_W: dict[str, dict] = {
