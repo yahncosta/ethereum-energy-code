@@ -57,3 +57,5 @@ NON_HYPERSCALE_VCPU_MAX_W: dict[str, float] = {
     )
     for provider, archs in _PROVIDER_MICROARCHS.items()
 }
+
+_ALL_VCPU_MAX_W: dict[str, float] = {**CCF_VCPU_MAX_W, **NON_HYPERSCALE_VCPU_MAX_W}

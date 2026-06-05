@@ -1,5 +1,5 @@
 import pandas as pd
-from inference.constants.cloud import CCF_VCPU_MAX_W, NON_HYPERSCALE_VCPU_MAX_W
+from inference.constants.cloud import _ALL_VCPU_MAX_W
 
 COLUMNS_TO_KEEP = {
     "ip":              "ip",
@@ -12,9 +12,6 @@ COLUMNS_TO_KEEP = {
 }
 
 COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el", "Protocols_el", "Protocols_cl"]
-
-_KNOWN_CLOUD_PROVIDERS = set(CCF_VCPU_MAX_W) | set(NON_HYPERSCALE_VCPU_MAX_W)
-
 
 def select_and_rename_columns(df: pd.DataFrame) -> pd.DataFrame:
     missing = [c for c in COLUMNS_TO_KEEP if c not in df.columns]
@@ -31,7 +28,7 @@ def drop_and_clean_rows(df: pd.DataFrame) -> pd.DataFrame:
     null_cl   = df["consensus_client"].isna()
     null_el   = df["execution_client"].isna()
     arm_no_os = (df["hw_arch"] == "ARM") & df["os_token"].isna()
-    unknown_cloud = df["cloud_provider"].notna() & ~df["cloud_provider"].isin(_KNOWN_CLOUD_PROVIDERS)
+    unknown_cloud = df["cloud_provider"].notna() & ~df["cloud_provider"].isin(_ALL_VCPU_MAX_W)
 
     df = df[~null_arch & ~null_cl & ~null_el & ~arm_no_os & ~unknown_cloud].reset_index(drop=True)
 
