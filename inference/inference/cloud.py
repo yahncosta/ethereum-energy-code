@@ -34,14 +34,7 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         }
 
         if not candidates:
-            candidates = {
-                k: v for k, v in EC2_INSTANCE_POWER_W.items()
-                if v["vcpu"] >= row["required_vcpu"]
-                and v["ram_gb"] >= row["required_ram_gb"]
-            }
-
-        if not candidates:
-            raise ValueError(f"No EC2 candidates found for arch={node_arch}, vcpu>={row['required_vcpu']}, ram>={row['required_ram_gb']}")
+            raise ValueError(f"No EC2 candidates found.")
 
         pct100_vals = [v["pct100"] for v in candidates.values()]
         df.at[idx, "power_cloud_at_load_w"] = sum(pct100_vals) / len(pct100_vals)
