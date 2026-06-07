@@ -50,6 +50,4 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         (df.loc[cloud_mask, "power_cloud_at_load_w"] + SSD_OVERHEAD_W_PANKOVSKA) * CLOUD_PUE_PANKOVSKA
     )
 
-    df = df.drop(columns=["is_validator", "required_ram_gb", "required_vcpu"])
-
     return df

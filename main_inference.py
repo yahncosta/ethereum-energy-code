@@ -9,12 +9,26 @@ SOURCE_CONFIG = "pre_train_data"
 TARGET_CONFIG = "train_data"
 SOURCE_SPLIT = "train"
 
+TRAIN_DATA_COLUMNS = [
+    "consensus_client",
+    "execution_client",
+    "hw_arch",
+    "os_token",
+    "cloud_provider",
+    "gossip_phase",
+    "is_sync_committee_member",
+    "attnets_num",
+    "syncnets_num",
+    "power_node_w",
+]
+
 
 def main():
     df = load_dataset(REPO_ID, name=SOURCE_CONFIG, split=SOURCE_SPLIT).to_pandas()
     df = infer_gossip_sync_features(df)
     df = infer_bare_metal_features(df)
     df = infer_cloud_features(df)
+    df = df[TRAIN_DATA_COLUMNS]
 
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(
         REPO_ID,
