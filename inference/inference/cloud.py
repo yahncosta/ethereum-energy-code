@@ -11,14 +11,10 @@ from inference.constants.cloud import (
     EC2_INSTANCE_POWER_W,
     _ALL_VCPU_MAX_W,
 )
-from inference.constants.gossip_phase_sync_member import GOSSIP_PHASE_NO_VALIDATORS
+
 
 def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-
-    df["is_validator"] = (
-        (df["gossip_phase"] != GOSSIP_PHASE_NO_VALIDATORS) | df["is_sync_committee_member"]
-    )
 
     df["required_ram_gb"] = np.where(df["is_validator"], NODE_RAM_VALIDATOR_GB, NODE_RAM_NON_VALIDATOR_GB)
     df["required_vcpu"] = np.where(df["is_validator"], NODE_VCPU_MIN_VALIDATOR, NODE_VCPU_MIN_NON_VALIDATOR)

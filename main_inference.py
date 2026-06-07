@@ -28,6 +28,7 @@ def main():
     df = infer_gossip_sync_features(df)
     df = infer_bare_metal_features(df)
     df = infer_cloud_features(df)
+    print(df.columns.tolist())
     df = df[TRAIN_DATA_COLUMNS]
 
     DatasetDict({SOURCE_SPLIT: Dataset.from_pandas(df, preserve_index=False)}).push_to_hub(

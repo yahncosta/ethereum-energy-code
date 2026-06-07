@@ -22,5 +22,8 @@ def infer_gossip_sync_features(df: pd.DataFrame) -> pd.DataFrame:
 
     df["gossip_phase"] = df["attnets_num"].apply(_gossip_phase)
     df["is_sync_committee_member"] = df["syncnets_num"] > 0
+    df["is_validator"] = (
+        (df["gossip_phase"] != GOSSIP_PHASE_NO_VALIDATORS) | df["is_sync_committee_member"]
+    )
 
     return df
