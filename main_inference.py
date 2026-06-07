@@ -15,8 +15,6 @@ TRAIN_DATA_COLUMNS = [
     "hw_arch",
     "os_token",
     "cloud_provider",
-    "gossip_phase",
-    "is_sync_committee_member",
     "attnets_num",
     "syncnets_num",
     "power_node_w",
