@@ -7,11 +7,9 @@ COLUMNS_TO_KEEP = {
     "attnets_num_cl":  "attnets_num",
     "syncnets_cl":     "syncnets_num",
     "AgentVersion_el": "AgentVersion_el",
-    "Protocols_cl":    "Protocols_cl",
-    "Protocols_el":    "Protocols_el",
 }
 
-COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el", "Protocols_el", "Protocols_cl"]
+COLUMNS_TO_DROP = ["AgentVersion_cl", "AgentVersion_el"]
 
 def select_and_rename_columns(df: pd.DataFrame) -> pd.DataFrame:
     missing = [c for c in COLUMNS_TO_KEEP if c not in df.columns]
