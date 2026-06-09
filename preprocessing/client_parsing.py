@@ -60,12 +60,25 @@ def parse_clients_and_arch(df: pd.DataFrame) -> pd.DataFrame:
     df["hw_arch"] = [resolve_arch(c, e) for c, e in zip(cl_arches, el_arches)]
 
     def detect_os(row):
-        for agent in (row["AgentVersion_cl"], row["AgentVersion_el"]):
+        def find_tok(agent):
             if agent and not (isinstance(agent, float) and np.isnan(agent)):
                 for tok in _OS_TOKENS:
                     if tok in agent.lower():
                         return tok
-        return None
+            return None
+
+        cl_tok = find_tok(row["AgentVersion_cl"])
+        el_tok = find_tok(row["AgentVersion_el"])
+
+        if cl_tok is None and el_tok is None:
+            return None
+        if cl_tok is None:
+            return el_tok
+        if el_tok is None:
+            return cl_tok
+        if cl_tok != el_tok:
+            return None
+        return cl_tok
 
     df["os_token"] = df.apply(detect_os, axis=1)
 
