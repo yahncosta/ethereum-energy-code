@@ -56,12 +56,13 @@ _M7G_INSTANCES: dict[str, dict] = {
     for name, v in _M7G_INSTANCES_PKG.items()
 }
 
-EC2_INSTANCE_POWER_W: dict[str, dict] = {
+AWS_EC2_INSTANCE_POWER_W: dict[str, dict] = {
     name: {"vcpu": v["vcpu"], "ram_gb": v["ram_gb"], "arch": v["arch"], "pct100": v["pct100"]}
     for name, v in {**_M6I_INSTANCES, **_R6I_INSTANCES, **_R6G_INSTANCES, **_M7G_INSTANCES}.items()
 }
 
 CCF_VCPU_MAX_W: dict[str, float] = {
+    "aws":   3.50,
     "gcp":   4.26,
     "azure": 3.76,
 }

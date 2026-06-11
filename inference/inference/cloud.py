@@ -8,7 +8,7 @@ from inference.constants.cloud import (
     NODE_RAM_NON_VALIDATOR_GB,
     NODE_RAM_VALIDATOR_GB,
     SSD_OVERHEAD_W_PANKOVSKA,
-    EC2_INSTANCE_POWER_W,
+    AWS_EC2_INSTANCE_POWER_W,
     _ALL_VCPU_MAX_W,
 )
 
@@ -23,7 +23,7 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
     for idx, row in df[aws_mask].iterrows():
         node_arch = row["hw_arch"]
         candidates = {
-            k: v for k, v in EC2_INSTANCE_POWER_W.items()
+            k: v for k, v in AWS_EC2_INSTANCE_POWER_W.items()
             if v["vcpu"] >= row["required_vcpu"]
             and v["ram_gb"] >= row["required_ram_gb"]
             and v["arch"] == node_arch
