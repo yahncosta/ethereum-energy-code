@@ -82,13 +82,13 @@ _CCF_MICROARCH_MAX_W: dict[str, float] = {
 _PROVIDER_MICROARCHS: dict[str, list[str]] = {
     "hetzner":      ["EPYC 2nd Gen", "EPYC 3rd Gen", "EPYC 4th Gen"],
     "ovh":          ["EPYC 3rd Gen", "EPYC 4th Gen", "Cascade Lake", "Sapphire Rapids"],
-    "contabo":      ["EPYC 2nd Gen", "EPYC 5th Gen"],
+    "contabo":      ["EPYC 2nd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
     "netcup":       ["EPYC 2nd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
-    "digitalocean": ["Skylake", "Ice Lake", "Sapphire Rapids", "EPYC 3rd Gen"],
-    "vultr":        ["Cascade Lake", "EPYC 2nd Gen", "EPYC 4th Gen"],
+    "digitalocean": ["Skylake", "Cascade Lake", "Ice Lake", "Sapphire Rapids", "EPYC 2nd Gen", "EPYC 3rd Gen"],
+    "vultr":        ["Cascade Lake", "EPYC 2nd Gen", "EPYC 3rd Gen"],
     "linode":       ["EPYC 1st Gen", "EPYC 2nd Gen", "EPYC 3rd Gen"],
     "leaseweb":     ["Cascade Lake", "Sapphire Rapids", "EPYC 2nd Gen", "EPYC 3rd Gen"],
-    "clouvider":    ["Ice Lake", "EPYC 3rd Gen", "EPYC 4th Gen"],
+    "clouvider":    ["Cascade Lake", "EPYC 3rd Gen"],
     "latitude":     ["EPYC 3rd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
     "oracle":       ["EPYC 3rd Gen", "EPYC 4th Gen", "EPYC 5th Gen"],
 }
