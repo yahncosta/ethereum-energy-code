@@ -62,7 +62,6 @@ EC2_INSTANCE_POWER_W: dict[str, dict] = {
 }
 
 CCF_VCPU_MAX_W: dict[str, float] = {
-    "aws":   3.50,
     "gcp":   4.26,
     "azure": 3.76,
 }
