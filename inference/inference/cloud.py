@@ -3,6 +3,7 @@ import pandas as pd
 
 from inference.constants.cloud import (
     CLOUD_PUE_PANKOVSKA,
+    CLOUD_PUE_CCF,
     NODE_VCPU_MIN_NON_VALIDATOR,
     NODE_VCPU_MIN_VALIDATOR,
     NODE_RAM_NON_VALIDATOR_GB,
@@ -47,6 +48,6 @@ def infer_cloud_features(df: pd.DataFrame) -> pd.DataFrame:
         p_cpu_w = _ALL_VCPU_MAX_W[row["cloud_provider"]] * vcpu_min
         p_ram_w = CCF_MEMORY_W_PER_GB * row["required_ram_gb"]
         p_ssd_w = CCF_SSD_W_PER_TB * row["required_ssd_tb"]
-        df.at[idx, "power_node_w"] = p_cpu_w + p_ram_w + p_ssd_w
+        df.at[idx, "power_node_w"] = (p_cpu_w + p_ram_w + p_ssd_w) * CLOUD_PUE_CCF
 
     return df
