@@ -22,8 +22,8 @@ _R6I_INSTANCES: dict[str, dict] = {
 }
 
 _R6G_INSTANCES: dict[str, dict] = {
-    "r6g.2xlarge": {"vcpu": 8,  "ram_gb": 64,  "arch": "ARM", "pct100": 61.20},
-    "r6g.4xlarge": {"vcpu": 16, "ram_gb": 128, "arch": "ARM", "pct100": 122.50},
+    "r6g.2xlarge": {"vcpu": 8,  "ram_gb": 64,  "arch": "ARM", "pkg_w_100": 19.10, "ram_w_100": 38.40, "delta": 3.75, "pct100": 61.20},
+    "r6g.4xlarge": {"vcpu": 16, "ram_gb": 128, "arch": "ARM", "pkg_w_100": 38.20, "ram_w_100": 76.80, "delta": 7.50, "pct100": 122.50},
 }
 
 _GRAVITON3_CHIP_W_100: float = 100.0
