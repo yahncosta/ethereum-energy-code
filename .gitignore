@@ -1,3 +1,4 @@
 venv/
 test/
 __pycache__/
+rf_power_model.joblib

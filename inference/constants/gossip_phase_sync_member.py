@@ -1,5 +1,0 @@
-ATTNETS_SATURATION_THRESHOLD: int = 64
-
-GOSSIP_PHASE_NO_VALIDATORS: str = "no_validators"
-GOSSIP_PHASE_RAMPING: str = "ramping"
-GOSSIP_PHASE_SATURATED: str = "saturated"
