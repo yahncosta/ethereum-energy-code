@@ -12,4 +12,6 @@ dependencies = [
     "huggingface-hub",
     "scikit-learn",
     "ipython",
+    "ipykernel",
+    "pip",
 ]
